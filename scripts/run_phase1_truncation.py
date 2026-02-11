@@ -53,6 +53,7 @@ def main():
 
     os.makedirs(cfg.output.results_dir, exist_ok=True)
     os.makedirs(cfg.output.plots_dir, exist_ok=True)
+    logger.add(os.path.join(cfg.output.results_dir, "run_phase1_truncation.log"), rotation="10 MB")
 
     # Load model
     logger.info("Loading model...")

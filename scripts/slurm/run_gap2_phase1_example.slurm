@@ -32,6 +32,7 @@ for i in range(torch.cuda.device_count()):
 
 
 # 注意：已支持按模型家族分流输入构造；首次接入新权重时建议先小样本冒烟。
+
 # 若直接切到 Qwen3-VL，请先补齐 Qwen 输入预处理与 visual token 定位逻辑。
 
 
@@ -40,17 +41,28 @@ conda run -n minerU python scripts/run_phase1_causal.py \
   --model_config configs/qwen_vl.yaml \
 
   --model_name "${MODEL_PATH}" \
+  --num_samples 10 \
+  --adaptive_tau \
+  --tau_ratio 0.1
+
+
+  --model_name "${MODEL_PATH}" \
 
   --num_samples 10
+
 
 conda run -n minerU python scripts/run_phase1_truncation.py \
   --config configs/default.yaml \
   --model_config configs/qwen_vl.yaml \
+
+  --model_name "${MODEL_PATH}" \
+
   --step 2
 
 conda run -n minerU python scripts/run_phase1_geometry.py \
   --config configs/default.yaml \
   --model_config configs/qwen_vl.yaml \
+
 
   --model_name "${MODEL_PATH}" \
 

@@ -18,7 +18,6 @@ import os
 import sys
 import json
 import argparse
-import pickle
 
 import torch
 import numpy as np
@@ -37,7 +36,6 @@ from src.geometry.effective_rank import (
 from src.geometry.cosine_concentration import compute_cosine_concentration_per_layer
 from src.geometry.cka import compute_cka_per_layer
 from src.data.dataset_loader import load_dataset_for_eval
-from src.data.subset_sampler import sample_hard_easy_subsets
 from src.visualization.plots import GAPVisualizer
 
 
@@ -61,6 +59,7 @@ def main():
 
     os.makedirs(cfg.output.results_dir, exist_ok=True)
     os.makedirs(cfg.output.plots_dir, exist_ok=True)
+    logger.add(os.path.join(cfg.output.results_dir, "run_phase1_geometry.log"), rotation="10 MB")
 
     # Parse probe layers
     probe_layers = None
