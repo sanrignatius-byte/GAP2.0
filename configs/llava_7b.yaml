@@ -1,0 +1,19 @@
+# LLaVA-1.5-7B specific configuration
+# Inherits from default.yaml
+
+model:
+  name: "llava-hf/llava-1.5-7b-hf"
+  num_layers: 32
+  hidden_dim: 4096
+  num_visual_tokens: 576  # 24x24 patch tokens from CLIP ViT-L/14@336
+  vision_encoder: "openai/clip-vit-large-patch14-336"
+  projector_type: "mlp2x_gelu"  # 2-layer MLP projector
+  device: "cuda"
+  dtype: "float16"
+
+# Layer ranges for analysis
+analysis:
+  # Based on prior work (LLaVA-CAM), the cliff is expected around layer 15-20
+  expected_cliff_range: [14, 22]
+  # Layers to probe in detail
+  probe_layers: [0, 4, 8, 12, 16, 20, 24, 28, 31]
