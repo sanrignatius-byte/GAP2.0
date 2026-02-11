@@ -1,7 +1,8 @@
 """Phase 1 Week 1: Causal Tracing Experiment.
 
-Runs causal patching on LLaVA-1.5-7B to measure the causal effect of
-visual tokens at each layer. Computes EVD for hard and easy task subsets.
+Runs causal patching on a configured MLLM (e.g., LLaVA or Qwen-VL) to
+measure the causal effect of visual tokens at each layer. Computes EVD for
+hard and easy task subsets.
 
 Validates:
   - Checkpoint 1: Modality Cliff causes real performance failures
@@ -29,7 +30,7 @@ from loguru import logger
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.models.model_loader import load_model, find_visual_token_positions
-from src.models.hooks import ActivationExtractor
+from src.models.input_preparation import prepare_model_input
 from src.causal.patching import CausalPatcher
 from src.causal.evd import (
     compute_evd_batch,
@@ -42,57 +43,11 @@ from src.data.subset_sampler import sample_hard_easy_subsets
 from src.visualization.plots import GAPVisualizer
 
 
-def prepare_llava_input(sample: dict, processor, model, device: str):
-    """Prepare a single sample for LLaVA inference.
-
-    Returns:
-        (model_inputs, answer_token_ids)
-    """
-    image = sample["image"]
-    question = sample["question"]
-    answer = sample["answer"]
-
-    # Construct prompt in LLaVA format
-    prompt = f"USER: <image>\n{question}\nASSISTANT:"
-
-    inputs = processor(text=prompt, images=image, return_tensors="pt")
-    inputs = {k: v.to(device) for k, v in inputs.items()}
-
-    # Tokenize the answer to get target token IDs
-    answer_tokens = processor.tokenizer(
-        answer, add_special_tokens=False, return_tensors="pt"
-    )
-    answer_token_ids = answer_tokens["input_ids"][0].to(device)
-
-    return inputs, answer_token_ids
-
-
-def evaluate_sample(model, model_inputs, sample, processor, device):
-    """Evaluate if model generates the correct answer for a sample.
-
-    Returns True if the generated answer contains the ground truth.
-    """
-    with torch.no_grad():
-        output_ids = model.generate(
-            **model_inputs,
-            max_new_tokens=128,
-            do_sample=False,
-        )
-    # Decode only the generated tokens (skip input)
-    input_len = model_inputs["input_ids"].shape[1]
-    generated = processor.tokenizer.decode(
-        output_ids[0][input_len:], skip_special_tokens=True
-    ).strip().lower()
-
-    answer = sample["answer"].strip().lower()
-
-    # Simple containment check (can be refined per-dataset)
-    return answer in generated
-
-
 def main():
     parser = argparse.ArgumentParser(description="Phase 1: Causal Tracing")
     parser.add_argument("--config", type=str, default="configs/default.yaml")
+    parser.add_argument("--model_name", type=str, default=None,
+                        help="Override model name/path in config")
     parser.add_argument("--model_config", type=str, default=None,
                         help="Model-specific config to merge (e.g., configs/llava_7b.yaml)")
     parser.add_argument("--num_samples", type=int, default=None,
@@ -107,6 +62,8 @@ def main():
     if args.model_config:
         model_cfg = OmegaConf.load(args.model_config)
         cfg = OmegaConf.merge(cfg, model_cfg)
+    if args.model_name:
+        cfg.model.name = args.model_name
 
     if args.num_samples:
         cfg.data.hard_samples = args.num_samples
@@ -154,9 +111,7 @@ def main():
     # ---- Step 3: Find visual token positions ----
     # Use first sample to determine token layout
     test_sample = hard_samples_all[0]
-    test_inputs, _ = prepare_llava_input(
-        test_sample, bundle.processor, bundle.model, cfg.model.device
-    )
+    test_inputs, _ = prepare_model_input(test_sample, bundle, cfg.model.device)
     visual_range = find_visual_token_positions(bundle, test_inputs["input_ids"])
     logger.info(f"Visual token range: {visual_range}")
 
@@ -169,7 +124,7 @@ def main():
     )
 
     def prepare_fn(sample):
-        return prepare_llava_input(sample, bundle.processor, bundle.model, cfg.model.device)
+        return prepare_model_input(sample, bundle, cfg.model.device)
 
     logger.info("Running causal tracing on HARD samples...")
     hard_results = patcher.trace_dataset(
