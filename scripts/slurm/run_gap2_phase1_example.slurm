@@ -30,12 +30,17 @@ for i in range(torch.cuda.device_count()):
     print(f'  {i}: {torch.cuda.get_device_name(i)} {p.total_memory/1024**3:.1f}GB')
 "
 
-# 注意：当前仓库默认 runner 仍偏向 LLaVA 输入流。
+
+# 注意：已支持按模型家族分流输入构造；首次接入新权重时建议先小样本冒烟。
 # 若直接切到 Qwen3-VL，请先补齐 Qwen 输入预处理与 visual token 定位逻辑。
+
 
 conda run -n minerU python scripts/run_phase1_causal.py \
   --config configs/default.yaml \
   --model_config configs/qwen_vl.yaml \
+
+  --model_name "${MODEL_PATH}" \
+
   --num_samples 10
 
 conda run -n minerU python scripts/run_phase1_truncation.py \
@@ -46,6 +51,9 @@ conda run -n minerU python scripts/run_phase1_truncation.py \
 conda run -n minerU python scripts/run_phase1_geometry.py \
   --config configs/default.yaml \
   --model_config configs/qwen_vl.yaml \
+
+  --model_name "${MODEL_PATH}" \
+
   --num_samples 10
 
 conda run -n minerU python scripts/run_checkpoint_eval.py \
