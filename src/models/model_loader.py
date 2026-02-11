@@ -191,11 +191,44 @@ def find_visual_token_positions(
         return (start, end)
 
     elif "qwen" in model_bundle.model_name.lower():
-        # For Qwen-VL, visual tokens are marked with special tokens
-        # This needs model-specific handling based on the processor output
-        raise NotImplementedError(
-            "Qwen-VL visual token position detection requires processor output. "
-            "Use processor.get_visual_token_mask() or equivalent."
+        cfg = model_bundle.model.config
+        token_ids = input_ids[0]
+
+        # Newer Qwen-VL variants often expose a dedicated image token id.
+        image_token_id = getattr(cfg, "image_token_id", None)
+        if image_token_id is not None:
+            pos = (token_ids == image_token_id).nonzero(as_tuple=True)[0]
+            if len(pos) > 0:
+                return (int(pos[0].item()), int(pos[-1].item()) + 1)
+
+        # Fallback to vision boundary token IDs if available.
+        vstart = getattr(cfg, "vision_start_token_id", None)
+        vend = getattr(cfg, "vision_end_token_id", None)
+        if vstart is not None and vend is not None:
+            starts = (token_ids == vstart).nonzero(as_tuple=True)[0]
+            ends = (token_ids == vend).nonzero(as_tuple=True)[0]
+            if len(starts) > 0 and len(ends) > 0:
+                start = int(starts[0].item()) + 1
+                end = int(ends[0].item())
+                if end > start:
+                    return (start, end)
+
+        # Final fallback: try known special tokens from tokenizer.
+        tokenizer = model_bundle.tokenizer
+        start_tok = tokenizer.convert_tokens_to_ids("<|vision_start|>")
+        end_tok = tokenizer.convert_tokens_to_ids("<|vision_end|>")
+        if start_tok is not None and end_tok is not None and start_tok >= 0 and end_tok >= 0:
+            starts = (token_ids == start_tok).nonzero(as_tuple=True)[0]
+            ends = (token_ids == end_tok).nonzero(as_tuple=True)[0]
+            if len(starts) > 0 and len(ends) > 0:
+                start = int(starts[0].item()) + 1
+                end = int(ends[0].item())
+                if end > start:
+                    return (start, end)
+
+        raise ValueError(
+            "Could not infer Qwen-VL visual token positions from input_ids. "
+            "Check processor chat template and model special tokens."
         )
 
     else:

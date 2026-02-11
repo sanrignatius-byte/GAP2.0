@@ -1,7 +1,8 @@
 """Phase 1 Week 1: Causal Tracing Experiment.
 
-Runs causal patching on LLaVA-1.5-7B to measure the causal effect of
-visual tokens at each layer. Computes EVD for hard and easy task subsets.
+Runs causal patching on a configured MLLM (e.g., LLaVA or Qwen-VL) to
+measure the causal effect of visual tokens at each layer. Computes EVD for
+hard and easy task subsets.
 
 Validates:
   - Checkpoint 1: Modality Cliff causes real performance failures
@@ -29,7 +30,7 @@ from loguru import logger
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.models.model_loader import load_model, find_visual_token_positions
-from src.models.hooks import ActivationExtractor
+from src.models.input_preparation import prepare_model_input
 from src.causal.patching import CausalPatcher
 from src.causal.evd import (
     compute_evd_batch,
@@ -42,57 +43,11 @@ from src.data.subset_sampler import sample_hard_easy_subsets
 from src.visualization.plots import GAPVisualizer
 
 
-def prepare_llava_input(sample: dict, processor, model, device: str):
-    """Prepare a single sample for LLaVA inference.
-
-    Returns:
-        (model_inputs, answer_token_ids)
-    """
-    image = sample["image"]
-    question = sample["question"]
-    answer = sample["answer"]
-
-    # Construct prompt in LLaVA format
-    prompt = f"USER: <image>\n{question}\nASSISTANT:"
-
-    inputs = processor(text=prompt, images=image, return_tensors="pt")
-    inputs = {k: v.to(device) for k, v in inputs.items()}
-
-    # Tokenize the answer to get target token IDs
-    answer_tokens = processor.tokenizer(
-        answer, add_special_tokens=False, return_tensors="pt"
-    )
-    answer_token_ids = answer_tokens["input_ids"][0].to(device)
-
-    return inputs, answer_token_ids
-
-
-def evaluate_sample(model, model_inputs, sample, processor, device):
-    """Evaluate if model generates the correct answer for a sample.
-
-    Returns True if the generated answer contains the ground truth.
-    """
-    with torch.no_grad():
-        output_ids = model.generate(
-            **model_inputs,
-            max_new_tokens=128,
-            do_sample=False,
-        )
-    # Decode only the generated tokens (skip input)
-    input_len = model_inputs["input_ids"].shape[1]
-    generated = processor.tokenizer.decode(
-        output_ids[0][input_len:], skip_special_tokens=True
-    ).strip().lower()
-
-    answer = sample["answer"].strip().lower()
-
-    # Simple containment check (can be refined per-dataset)
-    return answer in generated
-
-
 def main():
     parser = argparse.ArgumentParser(description="Phase 1: Causal Tracing")
     parser.add_argument("--config", type=str, default="configs/default.yaml")
+    parser.add_argument("--model_name", type=str, default=None,
+                        help="Override model name/path in config")
     parser.add_argument("--model_config", type=str, default=None,
                         help="Model-specific config to merge (e.g., configs/llava_7b.yaml)")
     parser.add_argument("--num_samples", type=int, default=None,
@@ -100,6 +55,10 @@ def main():
     parser.add_argument("--corruption", type=str, default=None,
                         help="Override corruption method (zero, gaussian, mean_sub)")
     parser.add_argument("--output_dir", type=str, default=None)
+    parser.add_argument("--adaptive_tau", action="store_true",
+                        help="Calibrate EVD threshold from pilot samples")
+    parser.add_argument("--tau_ratio", type=float, default=0.1,
+                        help="Adaptive tau as ratio * mean layer-0 delta")
     args = parser.parse_args()
 
     # Load config
@@ -107,6 +66,8 @@ def main():
     if args.model_config:
         model_cfg = OmegaConf.load(args.model_config)
         cfg = OmegaConf.merge(cfg, model_cfg)
+    if args.model_name:
+        cfg.model.name = args.model_name
 
     if args.num_samples:
         cfg.data.hard_samples = args.num_samples
@@ -118,6 +79,7 @@ def main():
 
     os.makedirs(cfg.output.results_dir, exist_ok=True)
     os.makedirs(cfg.output.plots_dir, exist_ok=True)
+    logger.add(os.path.join(cfg.output.results_dir, "run_phase1_causal.log"), rotation="10 MB")
 
     logger.info(f"Config:\n{OmegaConf.to_yaml(cfg)}")
 
@@ -154,11 +116,30 @@ def main():
     # ---- Step 3: Find visual token positions ----
     # Use first sample to determine token layout
     test_sample = hard_samples_all[0]
-    test_inputs, _ = prepare_llava_input(
-        test_sample, bundle.processor, bundle.model, cfg.model.device
-    )
+    test_inputs, _ = prepare_model_input(test_sample, bundle, cfg.model.device)
     visual_range = find_visual_token_positions(bundle, test_inputs["input_ids"])
     logger.info(f"Visual token range: {visual_range}")
+
+    if args.adaptive_tau:
+        pilot_n = min(5, len(hard_samples_all))
+        logger.info(f"Calibrating adaptive tau using {pilot_n} pilot hard samples")
+        pilot_patcher = CausalPatcher(
+            model=bundle.model,
+            visual_token_range=visual_range,
+            corruption_method=cfg.causal.default_method,
+            evd_threshold=cfg.causal.evd_threshold,
+        )
+        pilot_results = pilot_patcher.trace_dataset(
+            hard_samples_all[:pilot_n],
+            prepare_fn=lambda s: prepare_model_input(s, bundle, cfg.model.device),
+        )
+        layer0 = [r.layer_effects[0].delta for r in pilot_results if len(r.layer_effects) > 0]
+        if len(layer0) > 0:
+            tau = max(1e-6, args.tau_ratio * float(np.mean(layer0)))
+            cfg.causal.evd_threshold = float(tau)
+            logger.info(f"Adaptive tau enabled: ratio={args.tau_ratio}, tau={tau:.6f}")
+        else:
+            logger.warning("Adaptive tau fallback: no pilot layer-0 deltas, keep configured tau")
 
     # ---- Step 4: Run causal tracing ----
     patcher = CausalPatcher(
@@ -169,7 +150,7 @@ def main():
     )
 
     def prepare_fn(sample):
-        return prepare_llava_input(sample, bundle.processor, bundle.model, cfg.model.device)
+        return prepare_model_input(sample, bundle, cfg.model.device)
 
     logger.info("Running causal tracing on HARD samples...")
     hard_results = patcher.trace_dataset(

@@ -19,7 +19,6 @@ import sys
 import json
 import argparse
 
-import torch
 import numpy as np
 from omegaconf import OmegaConf
 from loguru import logger
@@ -27,6 +26,7 @@ from loguru import logger
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.models.model_loader import load_model, find_visual_token_positions
+from src.models.input_preparation import prepare_model_input, evaluate_contains_answer
 from src.causal.truncation import TruncationExperiment
 from src.data.dataset_loader import load_dataset_for_eval
 from src.data.subset_sampler import sample_hard_easy_subsets
@@ -37,6 +37,8 @@ def main():
     parser = argparse.ArgumentParser(description="Phase 1: Truncation Experiment")
     parser.add_argument("--config", type=str, default="configs/default.yaml")
     parser.add_argument("--model_config", type=str, default=None)
+    parser.add_argument("--model_name", type=str, default=None,
+                        help="Override model name/path in config")
     parser.add_argument("--cliff_boundary", type=int, default=None,
                         help="Pre-computed cliff boundary from causal tracing")
     parser.add_argument("--step", type=int, default=2,
@@ -46,9 +48,12 @@ def main():
     cfg = OmegaConf.load(args.config)
     if args.model_config:
         cfg = OmegaConf.merge(cfg, OmegaConf.load(args.model_config))
+    if args.model_name:
+        cfg.model.name = args.model_name
 
     os.makedirs(cfg.output.results_dir, exist_ok=True)
     os.makedirs(cfg.output.plots_dir, exist_ok=True)
+    logger.add(os.path.join(cfg.output.results_dir, "run_phase1_truncation.log"), rotation="10 MB")
 
     # Load model
     logger.info("Loading model...")
@@ -68,10 +73,7 @@ def main():
         easy_samples.extend(e)
 
     # Find visual token positions
-    from scripts.run_phase1_causal import prepare_llava_input
-    test_inputs, _ = prepare_llava_input(
-        hard_samples[0], bundle.processor, bundle.model, cfg.model.device
-    )
+    test_inputs, _ = prepare_model_input(hard_samples[0], bundle, cfg.model.device)
     visual_range = find_visual_token_positions(bundle, test_inputs["input_ids"])
 
     # Setup truncation experiment
@@ -84,19 +86,17 @@ def main():
     truncation_layers = list(range(0, num_layers, args.step))
 
     def prepare_fn(sample):
-        inputs, _ = prepare_llava_input(
-            sample, bundle.processor, bundle.model, cfg.model.device
-        )
+        inputs, _ = prepare_model_input(sample, bundle, cfg.model.device)
         return inputs
 
     def evaluate_fn(model, model_inputs, sample):
-        with torch.no_grad():
-            output_ids = model.generate(**model_inputs, max_new_tokens=128, do_sample=False)
-        input_len = model_inputs["input_ids"].shape[1]
-        generated = bundle.processor.tokenizer.decode(
-            output_ids[0][input_len:], skip_special_tokens=True
-        ).strip().lower()
-        return sample["answer"].strip().lower() in generated
+        return evaluate_contains_answer(
+            model,
+            model_inputs,
+            sample,
+            tokenizer=bundle.processor.tokenizer,
+            max_new_tokens=cfg.model.max_new_tokens,
+        )
 
     # Run truncation on hard samples
     logger.info("Running truncation sweep on HARD samples...")

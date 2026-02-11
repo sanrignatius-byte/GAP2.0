@@ -18,7 +18,6 @@ import os
 import sys
 import json
 import argparse
-import pickle
 
 import torch
 import numpy as np
@@ -28,6 +27,7 @@ from loguru import logger
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.models.model_loader import load_model, find_visual_token_positions
+from src.models.input_preparation import prepare_model_input
 from src.models.hooks import ActivationExtractor
 from src.geometry.effective_rank import (
     compute_effective_rank_per_layer,
@@ -36,7 +36,6 @@ from src.geometry.effective_rank import (
 from src.geometry.cosine_concentration import compute_cosine_concentration_per_layer
 from src.geometry.cka import compute_cka_per_layer
 from src.data.dataset_loader import load_dataset_for_eval
-from src.data.subset_sampler import sample_hard_easy_subsets
 from src.visualization.plots import GAPVisualizer
 
 
@@ -44,6 +43,8 @@ def main():
     parser = argparse.ArgumentParser(description="Phase 1: Geometric Analysis")
     parser.add_argument("--config", type=str, default="configs/default.yaml")
     parser.add_argument("--model_config", type=str, default=None)
+    parser.add_argument("--model_name", type=str, default=None,
+                        help="Override model name/path in config")
     parser.add_argument("--num_samples", type=int, default=20,
                         help="Number of samples to average geometric metrics over")
     parser.add_argument("--probe_layers", type=str, default=None,
@@ -53,9 +54,12 @@ def main():
     cfg = OmegaConf.load(args.config)
     if args.model_config:
         cfg = OmegaConf.merge(cfg, OmegaConf.load(args.model_config))
+    if args.model_name:
+        cfg.model.name = args.model_name
 
     os.makedirs(cfg.output.results_dir, exist_ok=True)
     os.makedirs(cfg.output.plots_dir, exist_ok=True)
+    logger.add(os.path.join(cfg.output.results_dir, "run_phase1_geometry.log"), rotation="10 MB")
 
     # Parse probe layers
     probe_layers = None
@@ -85,7 +89,6 @@ def main():
     logger.info(f"Using {len(all_samples)} samples for geometric analysis")
 
     # ---- Collect activations and compute metrics ----
-    from scripts.run_phase1_causal import prepare_llava_input
 
     # Accumulators for per-layer metrics across samples
     visual_er_accum = {}
@@ -100,9 +103,7 @@ def main():
     for i, sample in enumerate(all_samples):
         logger.info(f"Processing sample {i+1}/{len(all_samples)}: {sample['id']}")
 
-        inputs, _ = prepare_llava_input(
-            sample, bundle.processor, bundle.model, cfg.model.device
-        )
+        inputs, _ = prepare_model_input(sample, bundle, cfg.model.device)
         visual_range = find_visual_token_positions(bundle, inputs["input_ids"])
 
         extractor = ActivationExtractor(
