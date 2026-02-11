@@ -1,0 +1,67 @@
+# GAP 2.0 Default Configuration
+
+model:
+  name: "llava-hf/llava-1.5-7b-hf"
+  device: "cuda"
+  dtype: "float16"  # float16 | bfloat16 | float32
+  max_new_tokens: 128
+
+# Causal patching settings
+causal:
+  corruption_methods:
+    - "zero"        # Zero-out visual tokens
+    - "gaussian"    # Gaussian noise (sigma = std of clean activations)
+    - "mean_sub"    # Replace with mean of visual tokens at that layer
+  default_method: "gaussian"
+  evd_threshold: 0.01  # tau for EVD computation
+  num_samples: 100     # samples per task category for causal tracing
+
+# Geometric analysis settings
+geometry:
+  effective_rank:
+    normalize: true      # Normalize singular values before computing ER
+  cosine_concentration:
+    subsample: null       # If set, subsample N token pairs (for efficiency)
+  cka:
+    kernel: "linear"      # linear | rbf
+    debiased: true
+
+# Truncation experiment
+truncation:
+  start_layer: 0
+  end_layer: null    # null = last layer
+  step: 1
+
+# Dataset settings
+data:
+  cache_dir: "./data/cache"
+  hard_samples: 100    # Number of hard samples per dataset
+  easy_samples: 100    # Number of easy samples per dataset
+  datasets:
+    - name: "chartqa"
+      split: "test"
+      category: "hard"
+    - name: "docvqa"
+      split: "validation"
+      category: "hard"
+    - name: "textvqa"
+      split: "validation"
+      category: "medium"
+    - name: "vqav2"
+      split: "validation"
+      category: "easy"
+
+# Output settings
+output:
+  results_dir: "./results"
+  plots_dir: "./results/plots"
+  cache_dir: "./results/cache"
+  save_hidden_states: false  # Saves a lot of storage; enable selectively
+
+# Visualization
+visualization:
+  figsize: [12, 8]
+  dpi: 150
+  style: "seaborn-v0_8-paper"
+  font_size: 12
+  mark_cliff_boundary: true
