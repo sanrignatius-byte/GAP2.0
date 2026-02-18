@@ -1,0 +1,26 @@
+======================================================================
+GAP 2.0 Phase 1 — Checkpoint Evaluation Report
+======================================================================
+
+--- CHECKPOINT 1: Modality Cliff Causes Real Performance Failures ---
+  Cliff boundary: layer 23
+  Hard EVD (mean): 24.5
+  Easy EVD (mean): 20.8
+  EVD gap (hard - easy): 3.6 layers
+
+--- CHECKPOINT 2: EVD Correlates with Downstream Performance ---
+  [Full per-sample correlation requires running evd_performance_correlation()]
+  Proxy check: EVD differs between task difficulty levels
+  ✓ Positive signal: Hard tasks have higher EVD
+
+--- CHECKPOINT 3: Geometric Collapse is Observable ---
+  Visual ER post/pre ratio: 1.094 (want <0.7)
+  Text ER post/pre ratio: 1.633 (want >0.85)
+  Visual ICC change: +0.173 (want positive)
+  CKA change: +0.008 (want positive)
+  ⚠ MARGINAL (2/4 criteria met)
+
+======================================================================
+OVERALL GO/NO-GO DECISION
+======================================================================
+✗ NO-GO: Critical checkpoints failed. Pivot direction or reframe as analysis-only paper.
