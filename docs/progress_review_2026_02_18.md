@@ -100,7 +100,7 @@ text_instruction_token 的 Original-Random delta 曲线呈现明确的"阶梯上
 
 visual_token 的 delta 全程为负（-0.15 均值），说明正确图像下视觉 token 的表征更复杂、更分散，线性 probe 更难以单一维度拟合。这反而**间接支持**了正确图像携带了更丰富信息的论点。
 
-### 3.2 answer_token 标签泄漏：已修复
+### 3.2 answer_token 标签泄漏：已修复并重跑验证
 
 **问题**：answer_token 取的是 teacher-forced 标签位置，模型已经"看到"了答案作为输入，probe 必然 100%。
 
@@ -110,24 +110,48 @@ visual_token 的 delta 全程为负（-0.15 均值），说明正确图像下视
 - `src/causal/probing.py`: `default_probe_indices()` 中 answer_token 取 `answer_token_start_idx - 1`
 - `scripts/run_phase2_text_probing.py`: `_build_probe_index_fn()` 中同样修复
 
-**验证标准**：重跑后 answer_token accuracy 应回落到 0.6-0.8 区间（如果视觉信息确实被写入了预测位），而非 1.0 或 0.0。
+**重跑结果（post layers 24-47）**：
 
-### 3.3 模型生成准确率：方向正确，样本量不足
+| 条件 | Answer Token Probe Accuracy |
+|------|-----------------------------|
+| Original | 0.6658 |
+| Blind Black | 0.5309 |
+| Blind Mean | 0.5769 |
+| Blind Random | 0.7113 |
+
+并且 `Original - Random` 在 answer token 上为负：
+- Delta = `-0.0455`
+- 95% CI = `[-0.0797, -0.0127]`
+
+**结论**：
+- 泄漏问题已消失（不再出现全层 1.0）。
+- 但 answer-token 的机制含义与 instruction-token 不一致，不能直接当作“同化增强”的正证据，需要单独建模解释（可能反映预测位上的冲突抑制或随机图像带来的先验捷径）。
+
+### 3.3 模型生成准确率：已补大样本，但有效 y/n 仍不足
+
+小样本（48）结果：
 
 | 条件 | Accuracy | 正确数 / 总数 |
 |------|----------|--------------|
 | Original（正确图像） | 0.3125 | 15/48 |
 | Blind Random（随机图像） | 0.2083 | 10/48 |
-| Delta | **+0.1042** | +5 samples |
-| Bootstrap 95% CI | [-0.0625, +0.2708] | CI 跨零（纯粹因为 N 太小） |
+| Delta | +0.1042 | +5 samples |
+| Bootstrap 95% CI | [-0.0625, +0.2708] | CI 跨零 |
+
+大样本任务（`max_samples=1200`）结果：
+
+| 条件 | Accuracy | 正确数 / 有效 y/n |
+|------|----------|------------------|
+| Original | 0.2768 | 31/112 |
+| Blind Random | 0.2143 | 24/112 |
+| Delta | +0.0625 | +7 samples |
+| Pair Bootstrap 95% CI | [-0.0446, +0.1696] | 仍跨零 |
 
 **纠偏判断**：
 
-1. +10.4% 的方向性 gap 是真实的，CI 跨零**纯粹因为 N=48 太小**。按当前 effect size，N=200 时 p 值大概率能过关。
-
-2. 大量 `pred=null`（模型正确推理但 max_new_tokens 截断导致未输出 yes/no）系统性压低了 accuracy。**已将 `max_new_tokens` 默认值从 16 提升到 512**。
-
-3. Pipeline 已跑通，扩大样本量成本极低。
+1. 方向上仍是 `Original > Random`，但统计显著性仍不足。  
+2. 核心瓶颈不是总样本数，而是**有效 y/n 样本数太少**（1200 中仅 112 有效）。  
+3. 下一步必须改为“面向 y/n 的有效样本采样”与“受控输出格式”，否则继续拉大 `max_samples` 收益有限。  
 
 ### 3.4 Attention Flow 实验
 
@@ -185,27 +209,31 @@ Checkpoint NO-GO 本身有价值：
 
 ## 六、下一步优先级（修订版）
 
-### Step 1: 验证修复（立即，P0）
+### Step 1: 结论固化（已完成）
 
-1. 用 5 个样本验证 answer_token probe accuracy 回落到 0.6-0.8 区间
-2. 如果还是 1.0 或掉到 0.0，继续排查
+1. `answer_token` 泄漏修复完成并通过重跑验证（不再 1.0）。  
+2. instruction-token 的核心发现保持稳定：`Original - Random = +0.1462`，CI 明确大于 0。  
 
-### Step 2: 扩大样本量（高 ROI，P1）
+### Step 2: 构造“有效 y/n 大样本”（高 ROI，P1）
 
-1. 修复代码后直接跑 N=200 样本
+1. 不再只提 `max_samples`，改成目标 **有效 y/n >= 300**（建议 500）。  
+2. 对 generation 评估加入“受控短输出（只答 yes/no）”模板，降低 `pred=null`。  
 2. 预期效果：
-   - Model accuracy 的 +10% gap 达到统计显著
-   - Probing 曲线更平滑，Layer 24 转折点更精确
+   - Model accuracy gap 的 CI 收敛  
+   - 可与 probing 结果做更严格的一致性检验  
 
-### Step 3: 完善 Story（P2）
+### Step 3: 从 Prompting 过渡到 Alignment（P2）
 
-1. 补上修复后的 answer_token probing 曲线（关键拼图）
-2. 软截断与稀疏性分析
-3. 双通道因果追踪（GAP 2.1）
+1. 将当前证据重述为：  
+   - Prompting 层面：视觉 token 同时提供结构门控与内容增益。  
+2. Alignment 层面引入可训练目标：  
+   - 约束 `Original` 与 `Random` 的表征分离（尤其 instruction-token 的 post-layer gap 保持）。  
+   - 约束 answer prediction position 的稳定性（避免随机图像下异常抬升）。  
+3. 实验上先做轻量 alignment/regularization 原型，再跑同一套 Phase 2 指标闭环验证。  
 
 ---
 
-## 七、总结
+## 七、总结（更新）
 
 这一轮实验的信息量极大，数据远比初次解读要好：
 
@@ -213,7 +241,23 @@ Checkpoint NO-GO 本身有价值：
 - 三级阶梯（Blind → Random → Original）构成了完整的 Story
 - 逐层 probing delta 曲线精确定位了信息写入起点（Layer 24）
 - 截断阶跃精确定位了信息可用拐点（Layer 37-40）
-- answer_token 标签泄漏已修复，等待重跑验证
-- 扩大样本量后，model accuracy 的显著性大概率能补上
+- answer_token 标签泄漏已修复并重跑验证（不再 1.0）
+- 大样本任务已执行，但有效 y/n 仍不足，显著性未闭合
 
-**胜利在望。修好 index，拉大样本量，冲。**
+当前状态不是“失败”，而是“机制证据已稳，行为证据待补齐”。  
+下一步关键不是盲目加 `max_samples`，而是提高有效 y/n 密度并受控生成输出。
+
+---
+
+## 八、三周工作量评估（Prompting → Alignment）
+
+可以满足三周工作量，而且路径清晰：
+
+- 第 1 周：把 Phase 2 证据闭环做扎实  
+  - 有效 y/n 样本扩充、生成评估显著性、图表整理（instruction/answer/visual 三线）。
+
+- 第 2 周：落地对齐原型  
+  - 设计并实现一个最小 alignment 目标（例如保持 Original-Random 的 instruction gap，同时抑制 answer prediction 位在 random 下的异常偏移）。
+
+- 第 3 周：验证与叙事整合  
+  - 做 ablation（无对齐/弱对齐/强对齐），复用现有 Phase 2 指标对齐前后对比，完成“multimodal prompting 到 alignment”的故事闭环。
