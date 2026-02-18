@@ -13,7 +13,7 @@ model:
 
 # Layer ranges for analysis
 analysis:
+  probe_targets: ["visual_token", "text_instruction_token", "answer_token"]
   # Based on prior work (LLaVA-CAM), the cliff is expected around layer 15-20
-  expected_cliff_range: [14, 22]
   # Layers to probe in detail
   probe_layers: [0, 4, 8, 12, 16, 20, 24, 28, 31]

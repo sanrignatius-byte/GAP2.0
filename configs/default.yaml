@@ -62,3 +62,7 @@ visualization:
   style: "seaborn-v0_8-paper"
   font_size: 12
   mark_cliff_boundary: true
+
+# Analysis
+analysis:
+  probe_targets: ["visual_token", "text_instruction_token", "answer_token"]
