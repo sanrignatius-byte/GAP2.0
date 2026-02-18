@@ -1,0 +1,33 @@
+# Qwen3-VL-30B + 多数据集完整测试配置
+# 模型参数
+model:
+  name: "/projects/_hdd/myyyx1/data-process-test/Qwen3-VL-30B-A3B-Thinking"
+  num_layers: 48
+  hidden_dim: 2048
+  num_visual_tokens: null
+  device: "auto"
+  dtype: "bfloat16"
+
+analysis:
+  expected_cliff_range: [20, 36]
+  probe_layers: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 47]
+
+# 多数据集: hard + easy 对照
+data:
+  hard_samples: 10
+  easy_samples: 10
+  datasets:
+    - name: "chartqa"
+      split: "test"
+      category: "hard"
+    - name: "docvqa"
+      split: "validation"
+      category: "hard"
+    - name: "textvqa"
+      split: "validation"
+      category: "medium"
+
+output:
+  results_dir: "./results/full_test"
+  plots_dir: "./results/full_test/plots"
+  cache_dir: "./results/full_test/cache"

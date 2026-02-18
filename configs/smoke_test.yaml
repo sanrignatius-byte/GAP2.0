@@ -1,0 +1,13 @@
+# 冒烟测试配置：少量样本、单数据集，验证 pipeline 正确性
+data:
+  hard_samples: 5
+  easy_samples: 5
+  datasets:
+    - name: "chartqa"
+      split: "test"
+      category: "hard"
+
+output:
+  results_dir: "./results/smoke_test"
+  plots_dir: "./results/smoke_test/plots"
+  cache_dir: "./results/smoke_test/cache"

@@ -1,0 +1,27 @@
+# Qwen3-VL-30B + 冒烟测试合并配置
+# 模型参数 (from qwen_vl.yaml)
+model:
+  name: "/projects/_hdd/myyyx1/data-process-test/Qwen3-VL-30B-A3B-Thinking"
+  num_layers: 48
+  hidden_dim: 2048
+  num_visual_tokens: null
+  device: "auto"
+  dtype: "bfloat16"
+
+analysis:
+  expected_cliff_range: [20, 36]
+  probe_layers: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 47]
+
+# 冒烟测试覆盖：少量样本、单数据集
+data:
+  hard_samples: 5
+  easy_samples: 5
+  datasets:
+    - name: "chartqa"
+      split: "test"
+      category: "hard"
+
+output:
+  results_dir: "./results/smoke_test"
+  plots_dir: "./results/smoke_test/plots"
+  cache_dir: "./results/smoke_test/cache"
