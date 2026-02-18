@@ -27,6 +27,8 @@ def load_model(
     device: str = "cuda",
     dtype: str = "float16",
     attn_implementation: Optional[str] = None,
+    processor_min_pixels: Optional[int] = None,
+    processor_max_pixels: Optional[int] = None,
 ) -> ModelBundle:
     """Load an MLLM and return a ModelBundle.
 
@@ -35,6 +37,8 @@ def load_model(
         device: Target device.
         dtype: One of "float16", "bfloat16", "float32".
         attn_implementation: Optional attention implementation (e.g., "flash_attention_2").
+        processor_min_pixels: Optional lower bound for Qwen-VL image processing.
+        processor_max_pixels: Optional upper bound for Qwen-VL image processing.
 
     Returns:
         ModelBundle with model, processor, and metadata.
@@ -49,7 +53,14 @@ def load_model(
     if "llava" in model_name.lower():
         return _load_llava(model_name, device, torch_dtype, attn_implementation)
     elif "qwen" in model_name.lower():
-        return _load_qwen_vl(model_name, device, torch_dtype, attn_implementation)
+        return _load_qwen_vl(
+            model_name,
+            device,
+            torch_dtype,
+            attn_implementation,
+            processor_min_pixels=processor_min_pixels,
+            processor_max_pixels=processor_max_pixels,
+        )
     else:
         raise ValueError(f"Unsupported model: {model_name}. Supported: LLaVA, Qwen-VL.")
 
@@ -108,6 +119,8 @@ def _load_qwen_vl(
     device: str,
     torch_dtype: torch.dtype,
     attn_implementation: Optional[str],
+    processor_min_pixels: Optional[int] = None,
+    processor_max_pixels: Optional[int] = None,
 ) -> ModelBundle:
     """Load Qwen-VL family models (Qwen2.5-VL, Qwen3-VL, Qwen3-VL-MoE)."""
     from transformers import AutoProcessor, AutoModelForImageTextToText
@@ -124,7 +137,12 @@ def _load_qwen_vl(
         kwargs["attn_implementation"] = attn_implementation
 
     model = AutoModelForImageTextToText.from_pretrained(model_name, **kwargs)
-    processor = AutoProcessor.from_pretrained(model_name, trust_remote_code=True)
+    processor_kwargs = {"trust_remote_code": True}
+    if processor_min_pixels is not None:
+        processor_kwargs["min_pixels"] = int(processor_min_pixels)
+    if processor_max_pixels is not None:
+        processor_kwargs["max_pixels"] = int(processor_max_pixels)
+    processor = AutoProcessor.from_pretrained(model_name, **processor_kwargs)
 
     model.eval()
 
@@ -134,9 +152,19 @@ def _load_qwen_vl(
     num_layers = text_cfg.num_hidden_layers
     hidden_dim = text_cfg.hidden_size
 
+    max_pixels_note = (
+        f", processor_max_pixels={processor_max_pixels}"
+        if processor_max_pixels is not None
+        else ""
+    )
+    min_pixels_note = (
+        f", processor_min_pixels={processor_min_pixels}"
+        if processor_min_pixels is not None
+        else ""
+    )
     logger.info(
-        f"Qwen-VL loaded: {num_layers} layers, {hidden_dim}d, "
-        f"dynamic visual tokens"
+        f"Qwen-VL loaded: {num_layers} layers, {hidden_dim}d, dynamic visual tokens"
+        f"{min_pixels_note}{max_pixels_note}"
     )
 
     return ModelBundle(

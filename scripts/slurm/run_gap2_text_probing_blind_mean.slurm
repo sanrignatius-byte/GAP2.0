@@ -1,32 +1,29 @@
 #!/bin/bash
 #SBATCH -p cluster02
 #SBATCH -C gpu
-#SBATCH --job-name=gap2_attn_flow
-#SBATCH --output=logs/gap2_attn_flow_%j.out
-#SBATCH --error=logs/gap2_attn_flow_%j.err
-#SBATCH --time=02:00:00
+#SBATCH --job-name=gap2_text_probe_bmean
+#SBATCH --output=logs/gap2_text_probe_bmean_%j.out
+#SBATCH --error=logs/gap2_text_probe_bmean_%j.err
+#SBATCH --time=03:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --gpus=4
 
-# GAP 2.0 Phase 2 — Attention Flow Experiment
-# Distinguishes Late-Stage Readout vs Early Assimilation hypotheses
-# 30 samples (ChartQA + DocVQA + TextVQA), eager attention, 48 layers
-# 启用 max_pixels 自适应，避免长序列 attention OOM
+# GAP 2.0 Phase 2 — Text Token Probing (Blind Mean Baseline)
 
 set -euo pipefail
 
 module load Miniforge3
 
 REPO_ROOT=/projects/myyyx1/GAP2.0
-OUT_DIR="${REPO_ROOT}/results/attention_flow"
+OUT_DIR="${REPO_ROOT}/results/text_probing_chartqa_blind_mean"
 
 cd "$REPO_ROOT"
-mkdir -p logs "$OUT_DIR/plots"
+mkdir -p logs "$OUT_DIR"
 
 echo "========================================"
-echo "GAP 2.0 Phase 2 — Attention Flow"
+echo "GAP 2.0 Phase 2 — Text Token Probing (Blind Mean)"
 echo "Node: $(hostname) | Start: $(date)"
 echo "========================================"
 
@@ -40,19 +37,21 @@ for i in range(torch.cuda.device_count()):
 "
 
 echo ""
-echo "===== Phase 2: Attention Flow (30 samples, eager attn) ====="
-conda run -n gap2 python scripts/run_phase2_attention_flow.py \
+echo "===== Phase 2: Text Probing Blind Mean (ChartQA yes/no, 300 samples) ====="
+conda run -n gap2 python scripts/run_phase2_text_probing.py \
   --config configs/default.yaml \
   --model_config configs/qwen_vl_full.yaml \
-  --num_samples 30 \
-  --output_dir "$OUT_DIR" \
-  --attn_implementation eager \
-  --max_pixels 401408 \
-  --fallback_max_pixels 200704,100352,62720 \
-  --min_success_samples 10
+  --dataset chartqa \
+  --split test \
+  --max_samples 300 \
+  --probe_task yes_no \
+  --image_mode blind_mean \
+  --seed 42 \
+  --cv_folds 5 \
+  --output_dir "$OUT_DIR"
 
 echo ""
 echo "========================================"
-echo "Attention Flow complete! | End: $(date)"
+echo "Text Probing Blind Mean complete! | End: $(date)"
 echo "Results: $OUT_DIR"
 echo "========================================"

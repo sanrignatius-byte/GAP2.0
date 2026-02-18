@@ -101,13 +101,15 @@ def default_probe_indices(
     input_ids: torch.Tensor,
     visual_token_range: tuple[int, int],
     probe_targets: list[str],
+    aux: Optional[dict] = None,
 ) -> dict[str, int]:
     """Select token indices for requested probe targets.
 
     Conventions:
       - visual_token: midpoint index inside visual token range
       - text_instruction_token: last text token in prompt (outside visual range)
-      - answer_token: fallback to final prompt token (no teacher-forced answer token)
+      - answer_token: first teacher-forced answer token when available,
+        otherwise fallback to final prompt token
     """
     seq_len = int(input_ids.shape[-1])
     vstart, vend = visual_token_range
@@ -123,7 +125,10 @@ def default_probe_indices(
         elif target == "text_instruction_token":
             target_to_idx[target] = int(valid_text[-1])
         elif target == "answer_token":
-            target_to_idx[target] = seq_len - 1
+            if aux is not None and aux.get("answer_token_start_idx") is not None:
+                target_to_idx[target] = int(aux["answer_token_start_idx"])
+            else:
+                target_to_idx[target] = seq_len - 1
         else:
             raise ValueError(f"Unsupported probe target: {target}")
 
@@ -146,11 +151,14 @@ class TextTokenProbeExperiment:
     def extract_features(
         self,
         samples: list[dict],
-        prepare_inputs_fn: Callable[[dict], dict],
+        prepare_inputs_fn: Callable[[dict], dict | tuple[dict, dict]],
         visual_range_fn: Callable[[dict, dict], tuple[int, int]],
         label_fn: Callable[[dict], Optional[int]],
         probe_targets: list[str],
-        token_index_fn: Callable[[torch.Tensor, tuple[int, int], list[str]], dict[str, int]] = default_probe_indices,
+        token_index_fn: Callable[
+            [torch.Tensor, tuple[int, int], list[str], Optional[dict]],
+            dict[str, int],
+        ] = default_probe_indices,
         show_progress: bool = True,
     ) -> tuple[dict[str, dict[int, np.ndarray]], np.ndarray, list[str]]:
         """Extract hidden-state features for probe targets across layers.
@@ -180,13 +188,28 @@ class TextTokenProbeExperiment:
                 skipped += 1
                 continue
 
-            model_inputs = prepare_inputs_fn(sample)
+            prepared = prepare_inputs_fn(sample)
+            aux: dict = {}
+            if isinstance(prepared, tuple):
+                model_inputs, aux = prepared
+            else:
+                model_inputs = prepared
+
             visual_range = visual_range_fn(sample, model_inputs)
-            target_indices = token_index_fn(
-                model_inputs["input_ids"],
-                visual_range,
-                probe_targets,
-            )
+            try:
+                target_indices = token_index_fn(
+                    model_inputs["input_ids"],
+                    visual_range,
+                    probe_targets,
+                    aux=aux,
+                )
+            except TypeError:
+                # Backward compatibility for older token_index_fn signatures.
+                target_indices = token_index_fn(
+                    model_inputs["input_ids"],
+                    visual_range,
+                    probe_targets,
+                )
 
             with self._extractor:
                 self.model(**model_inputs)
@@ -200,7 +223,8 @@ class TextTokenProbeExperiment:
                         raise IndexError(
                             f"Target index out of bounds: target={target}, idx={idx}, seq_len={h.shape[0]}"
                         )
-                    buffers[target][layer_idx].append(h[idx].numpy())
+                    # NumPy does not reliably support bf16 tensors across envs; upcast first.
+                    buffers[target][layer_idx].append(h[idx].to(torch.float32).numpy())
 
             labels.append(int(label))
             sample_ids.append(sample.get("id", f"sample_{len(sample_ids)}"))

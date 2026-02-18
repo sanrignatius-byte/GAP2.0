@@ -1,0 +1,768 @@
+{
+  "model": "/projects/_hdd/myyyx1/data-process-test/Qwen3-VL-30B-A3B-Thinking",
+  "dataset": "chartqa",
+  "split": "test",
+  "max_samples_loaded": 300,
+  "num_eval_samples": 48,
+  "sample_ids": [
+    "chartqa_3",
+    "chartqa_7",
+    "chartqa_19",
+    "chartqa_24",
+    "chartqa_25",
+    "chartqa_33",
+    "chartqa_52",
+    "chartqa_53",
+    "chartqa_54",
+    "chartqa_69",
+    "chartqa_72",
+    "chartqa_77",
+    "chartqa_91",
+    "chartqa_101",
+    "chartqa_113",
+    "chartqa_117",
+    "chartqa_125",
+    "chartqa_127",
+    "chartqa_137",
+    "chartqa_138",
+    "chartqa_142",
+    "chartqa_151",
+    "chartqa_158",
+    "chartqa_162",
+    "chartqa_166",
+    "chartqa_169",
+    "chartqa_171",
+    "chartqa_175",
+    "chartqa_177",
+    "chartqa_187",
+    "chartqa_188",
+    "chartqa_201",
+    "chartqa_203",
+    "chartqa_205",
+    "chartqa_207",
+    "chartqa_213",
+    "chartqa_219",
+    "chartqa_223",
+    "chartqa_241",
+    "chartqa_247",
+    "chartqa_259",
+    "chartqa_261",
+    "chartqa_265",
+    "chartqa_269",
+    "chartqa_271",
+    "chartqa_273",
+    "chartqa_293",
+    "chartqa_299"
+  ],
+  "image_modes": [
+    "original",
+    "blind_randomimage"
+  ],
+  "seed": 42,
+  "max_new_tokens": 128,
+  "results": {
+    "original": {
+      "accuracy": 0.3125,
+      "num_valid": 48,
+      "num_skipped": 0,
+      "num_correct": 15,
+      "gold_counts": {
+        "no": 25,
+        "yes": 23
+      },
+      "pred_counts": {
+        "no": 11,
+        "yes": 7
+      },
+      "records": [
+        {
+          "id": "chartqa_3",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's see. The problem is asking if the sum value of Madagascar is more than Fiji. Wait, no, wait. Wait, the question is \"Is the sum value of Madagascar more then Fiji?\" Wait, maybe it's a typo, but probably it's asking if Madagascar's percentage is more than Fiji's. Let's check the values. Madagascar is 0.21%, Fiji is 0.38%. So 0.21 is less than 0.38. So the answer is no.\n</think>\n\nTo determine if the value for Madagascar is more than that for Fiji, we compare"
+        },
+        {
+          "id": "chartqa_7",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to find the percentages for \"Charismatic\" and \"Well-qualified to be president\" from the bar graph. \n\nLooking at the graph: \n- Charismatic is 39%\n- Well-qualified to be president is 26%\n\nSo we need to add those two numbers: 39 + 26 = 65.\n\nNext, we need to check if this sum is more than the percentage for \"A strong leader\". From the graph, \"A strong leader\" is 55%.\n\nNow, compare 65 and"
+        },
+        {
+          "id": "chartqa_19",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to identify the largest two bars and the smallest three bars from the bar chart. \n\nFirst, let's list out the percentages for each country:\n\n- United Arab Emirates: 94%\n- Mauritania: 91%\n- Spain: 88%\n- Armenia: 73%\n- South Korea: 72%\n\nNow, the largest two bars are United Arab Emirates (94%) and Mauritania (91%). Let's calculate their sum: 94 + 91 = 185.\n\nNext, the smallest"
+        },
+        {
+          "id": "chartqa_24",
+          "gold": "yes",
+          "pred": "yes",
+          "correct": true,
+          "generated": "So, let's look at the pie chart. The \"STEM\" segment is labeled with 52%. So the question is asking if that percentage is 52. Yes, the chart shows STEM as 52%.\n</think>\n\nTo determine if the percentage value of the \"STEM\" segment is 52, we examine the pie chart. The \"STEM\" segment is clearly labeled with \"52%\". \n\nTherefore, the answer is yes."
+        },
+        {
+          "id": "chartqa_25",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the largest segment (which is STEM at 52%) is greater than the sum of all the other segments. First, I need to find the sum of the other segments. The other segments are Management business, finance (17%), Social services, legal, education (11%), and Other non-STEM (20%). Let's add those up: 17 + 11 + 20. Let's calculate that: 17 + 11 is 28, plus 20 is 48. So the sum of the"
+        },
+        {
+          "id": "chartqa_33",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's check the \"Not at all\" values for both \"Use military force wisely\" and \"Handle an international crisis\". \n\nFirst, find the row for \"Use military force wisely\". The \"Not at all\" value is 51. \n\nThen, find the row for \"Handle an international crisis\". The \"Not at all\" value is 54. \n\nNow compare 51 and 54. 51 is less than 54. So the answer is no.\n</think>\n\nTo determine if the \"Not at all\" value of \"Use military force wisely\" is more than that"
+        },
+        {
+          "id": "chartqa_52",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's check the problem. The question is asking if the light blue bar has the smallest value which is 22. First, I need to identify what the light blue bar represents. Looking at the chart, the \"Not too much\" category is light blue. Let's check the values for \"Not too much\" across different groups.\n\nFor EU: Not too much is 26%\nFor WHO: Not too much is 22%\nFor Chinese government: Not too much is 35%\n\nNow, we need to see if 22 is the smallest value in the light blue bars. Let's"
+        },
+        {
+          "id": "chartqa_53",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, we need to identify the light green bars. Looking at the chart, the \"A fair amount\" category is the light green one. Let's list the values for \"A fair amount\" across the different groups: EU (51), WHO (40), Chinese government (13). Wait, let's check again. The chart has three groups: EU, WHO, Chinese government. For each, the \"A fair amount\" column is the light green. So EU's A fair amount is 51, WHO's is 40, Chinese government"
+        },
+        {
+          "id": "chartqa_54",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's look at the pie chart. The segment for \"Strong ties with Russia\" is 15%. Now, check the color. The chart shows that \"Strong ties with U.S.\" is a darker green (57%), \"Equally close ties\" is a lighter shade (21%), \"Strong ties with Russia\" is another shade. Wait, the question is if the 15% segment is light green. Let's see: the 15% is \"Strong ties with Russia\". Looking at the colors, the 15% segment—what color is it? The chart's segments:"
+        },
+        {
+          "id": "chartqa_69",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to find the number of deaths per 100,000 for each country. The bar graph shows:\n\n- Costa Rica: 173\n- Colombia: 175\n- Slovenia: 262\n\nThe question is asking if Slovenia's number is more than the combined total of Costa Rica and Colombia. So first, we need to calculate the sum of Costa Rica and Colombia's deaths.\n\nCosta Rica + Colombia = 173 + 175. Let's add those: 173 +"
+        },
+        {
+          "id": "chartqa_72",
+          "gold": "yes",
+          "pred": "yes",
+          "correct": true,
+          "generated": "Got it, let's check the table. The light green bar is labeled \"Center-left\". We need to find the value for 1989. Looking at the row for 1989, the Center-left column shows 35. So yes, that's correct.\n</think>\n\nTo determine if the value of the light green bar (labeled \"Center - left\") is 35 in 1989, we examine the table:  \n\n- Locate the row for 1989.  \n- Find the column for \"Center - left\".  \n\nIn the 1989 row,"
+        },
+        {
+          "id": "chartqa_77",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, we need to identify all the leftmost bars. The leftmost bars are the \"More\" category for each group. Let's list them out:\n\n- Total: 52\n- Men: 46\n- Women: 58\n- Rep/Lean Rep: 48\n- Dem/Lean Dem: 58\n\nNow, we need to find the median of these values. To find the median, we first need to sort the numbers in order. Let's list them: 46, 48, 52"
+        },
+        {
+          "id": "chartqa_91",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to identify the two extreme values and the middle bar value. \n\nLooking at the bar chart:\n\n- Thailand: 73.3% (1995) → this is the highest value (one extreme)\n- Lesotho: 35% (1996) → this is the lowest value (the other extreme)\n- Nicaragua: 55.7% (1998) → this is the middle value\n\nFirst, find the average of the two extreme values. The two extremes are 73.3"
+        },
+        {
+          "id": "chartqa_101",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, let's understand what the bar chart is showing. The title is \"Deaths from eating disorders, 1990\" and it's the total number of direct deaths from anorexia and bulimia nervosa across both sexes and all ages. Each bar has a value of \"<1\", which I think means less than 1 death. Wait, but the x-axis is a scale from 0 to 0.035, so maybe the values are per 100,000 or something? But the key point is that each"
+        },
+        {
+          "id": "chartqa_113",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's check this. First, we need to find the populations of Africa, North America, and South America, then add them up, and compare that sum to Europe's population.\n\nFirst, let's get the numbers:\n\n- Africa: 227.79 million\n- North America: 172.6 million\n- South America: 113.77 million\n- Europe: 549.33 million\n\nNow, add Africa, North America, and South America:\n\n227.79 + 172.6 + 113."
+        },
+        {
+          "id": "chartqa_117",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's break this down step by step. First, we need to identify the gray bars. The gray bars correspond to the \"Never\" category in the chart. Let's list out the values for each row's \"Never\" column:\n\n1. \"Seem obviously false or untrue\" has a gray bar of 12.\n2. \"Show people engaging in dangerous or troubling behavior\" has a gray bar of 14.\n3. \"Are abusive or demeaning toward others\" has a gray bar of 19.\n\nNow, we need to find the average of these three gray bar values. To do"
+        },
+        {
+          "id": "chartqa_125",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to solve this problem. First, we need to find all the segments in the pie chart. The segments are Unaffiliated (71), Other religions (821), Muslim (3,410), and Christian (3,292). Wait, let's list them out: 71, 821, 3410, 3292. \n\nFirst, let's find the average. To find the average, we need to sum all the values and divide by the number of segments. Let's calculate the sum: 71 +"
+        },
+        {
+          "id": "chartqa_127",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's check. The problem is asking if the Decrease value is two times the Increase value. First, find the values from the pie chart. The Increase is 30%, and the Decrease is 39%. Now, two times the Increase would be 30% * 2 = 60%. But the Decrease is 39%, which is not equal to 60%. So the answer is no.\n</think>\n\nTo determine if the \"Decrease\" value is two times the \"Increase\" value, we first identify the relevant percentages from the pie chart:  \n\n- The percentage"
+        },
+        {
+          "id": "chartqa_137",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, we need to identify what the green and blue bars represent. The problem says \"green bar\" and \"blue bar\"—looking at the chart, the green bars are the \"Upper\" income tier, and the blue bars are the \"Lower\" income tier. Let's confirm: the chart has three columns: Lower (blue), Middle (yellow), Upper (green). So blue is Lower, green is Upper.\n\nNow, we need to find the median of the Lower (blue) bar values and the median of the Upper (green) bar values, then check if"
+        },
+        {
+          "id": "chartqa_138",
+          "gold": "yes",
+          "pred": "yes",
+          "correct": true,
+          "generated": "So, let's look at the graph. The legend says \"Satisfied\" is green. The green line is labeled as Satisfied. So yes, the green graph represents Satisfied.\n</think>\n\nTo determine if the green graph represents \"Satisfied\", we examine the legend in the graph. The legend clearly labels the green line as \"Satisfied\". Therefore, the answer is yes."
+        },
+        {
+          "id": "chartqa_142",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's tackle this problem step by step. First, we need to identify the green graph (Satisfied) and the orange graph (Dissatisfied) from the chart. \n\nFirst, let's list the values for the green graph (Satisfied) from 2002 to 2006. Let's check the years: 2002, 2004, 2006. Wait, the x-axis is 2002, 2004, 2006, 2008, etc. So for the green graph"
+        },
+        {
+          "id": "chartqa_151",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to find the smallest value in the Approve graph and the largest value in the Disapprove graph. \n\nLooking at the Approve graph (the top line with the gold color). The values are: Aug 2014 (54), Oct 2014 (53), Feb 2015 (63), July 2015 (63), Dec 2015 (64). Wait, let's check again. The x-axis is Aug 2014, Oct 20"
+        },
+        {
+          "id": "chartqa_158",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's look at the graph. The \"Approve\" line is the top one (brown), and \"Disapprove\" is the bottom one (gray). In March, the Approve value is 47, and Disapprove is 46. So they're very close—47 and 46. That's a difference of 1, so they're almost merged. Let me check the other months to confirm. Jan: Approve 52, Disapprove 40 (big difference). Feb: 51 vs 41. Mar: 47 vs 46."
+        },
+        {
+          "id": "chartqa_162",
+          "gold": "yes",
+          "pred": "yes",
+          "correct": true,
+          "generated": "So, let's look at the dark blue line in the graph. The dark blue line represents \"Protect the right of Americans to own guns.\" Let's check the years: 1993 is 34, 1999 is 30, then 2003 is 42, etc. So in 1999, the dark blue line has a value of 30. Therefore, yes, there is a value 30 in the dark blue line.\n</think>\n\nTo determine if there is a value of 30 in the dark blue line, we analyze the graph"
+        },
+        {
+          "id": "chartqa_166",
+          "gold": "yes",
+          "pred": "yes",
+          "correct": true,
+          "generated": "So, let's look at the pie chart. The DK segment is labeled as 3%, and we need to check its color. In the chart, the DK part is a small slice, and from what I can see, it's gray. Let me confirm. The chart has three segments: Approve (58%, probably a gold color), Disapprove (39%, maybe a darker shade), and DK (3%, which is gray). Yes, the DK segment is gray.\n</think>\n\nTo determine if the color of the DK segment is gray, we examine the pie chart. The DK segment (labeled “3%"
+        },
+        {
+          "id": "chartqa_169",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the smallest segment's value is one third of the largest segment's value. First, I need to identify the smallest and largest segments from the pie chart. \n\nLooking at the chart: the segments are 13% (focus on scientific work/stay out) and 87% (take active role). So the smallest segment is 13%, the largest is 87%. Now, we need to check if 13 is one third of 87. \n\nLet's calculate one third of 87. 87 divided by 3 is"
+        },
+        {
+          "id": "chartqa_171",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's solve this problem step by step. First, we need to identify the values of each segment in the pie chart. The segments are: \"U.S. has responsibility\" (39%), \"U.S. doesn't have responsibility\" (55%), and \"Don't know\" (6%). \n\nFirst, find the smallest two segments. The smallest segment is \"Don't know\" with 6%, and the next smallest is \"U.S. has responsibility\" with 39%. Wait, no, wait: 6% is the smallest, then 39% is the next, then"
+        },
+        {
+          "id": "chartqa_175",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the median of all three data values is equal to 32. First, I need to identify the three data values from the pie chart. The percentages are: Use SNS 27%, Go online, no SNS 32%, Do not go online 41%. So the three values are 27, 32, and 41. To find the median, we need to order them from smallest to largest. Let's do that: 27, 32, 41. The median is the middle number when they"
+        },
+        {
+          "id": "chartqa_177",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the average of all the data values in the pie chart is greater than 40. First, I need to identify the data values. The pie chart has three categories: Prosecuting drug users (26%), Providing treatment (67%), and Don't know (7%). So the data values are 26, 67, and 7. \n\nTo find the average, I need to sum these values and divide by the number of values. Let's calculate the sum first: 26 + 67 + 7. Let's add 2"
+        },
+        {
+          "id": "chartqa_187",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's see. First, I need to find the sizes of each segment. The pie chart has three segments: \"Not safe\" is 76%, \"Safe\" is 19%, and \"DK\" is 6%. The two smallest segments would be the ones with the smallest percentages. Let's list them: 6% (DK) and 19% (Safe). Wait, no, wait. Wait, the smallest two are 6% and 19%? Wait, no, 6% is the smallest, then 19%, then 76%. So the two"
+        },
+        {
+          "id": "chartqa_188",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's look at the bar chart. The right-side bars are the \"No arguments\" category, which is the third bar in each group. Let's check the colors: \"Major\" is dark (like dark yellow or brown), \"Minor\" is medium (lighter than Major), and \"No arguments\" is the lightest (the lightest shade). So the right-side bars (No arguments) are the lightest. Let me confirm. For Total: Major is 9 (dark), Minor 29 (medium), No arguments 61 (lightest). Same for Rep/Lean Rep and Dem"
+        },
+        {
+          "id": "chartqa_201",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem. First, we need to find the values for Georgia and Western Asia, add them together, and then compare that sum to Finland's value.\n\nFirst, look at the bar chart. Georgia's daily meat consumption is 79.84 g, and Western Asia's is 69.62 g. Let's add those two numbers: 79.84 + 69.62. Let's calculate that. 79.84 + 69.62 = 149.46 g.\n\nNow, Finland's value is"
+        },
+        {
+          "id": "chartqa_203",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's try to figure out this problem. First, we need to identify the two lowest bars and the largest bar from the bar chart. \n\nLooking at the chart:\n\n- Ecuador: 0.02%\n- China: 0.02%\n- Ireland: <0.01%\n- Armenia: 0%\n- Israel: 0%\n\nThe two lowest bars would be Armenia and Israel, both at 0%. Wait, but Ireland is <0.01%, which is lower than 0%? Wait, no, 0% is lower than <0.01%? Wait"
+        },
+        {
+          "id": "chartqa_205",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem. First, we need to find the median of all the death rate values from the bar chart. To find the median, we need to list all the values in order and then find the middle one. \n\nFirst, let's list all the death rates:\n\nHeart disease: 371.7\n\nCancers: 155.3\n\nStroke: 104.7\n\nAccidents: 58.1\n\nPneumonia and influenza: 32.5\n\nRoad accidents: 27.1\n\nDiabetes: 17.7"
+        },
+        {
+          "id": "chartqa_207",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the average of the installed geothermal energy capacity for the Philippines and North America is greater than 2500 MW. First, I need to find the values for both. \n\nNorth America's capacity is 3,245 MW. The Philippines is 1,846.5 MW. To find the average, I add these two numbers and divide by 2. Let's calculate that. \n\nFirst, sum: 3,245 + 1,846.5 = 5,091.5. Then divide"
+        },
+        {
+          "id": "chartqa_213",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "So, let's look at the bar chart. Gabon's death rate is 0.13, and Tonga's is less than 0.01. So 0.13 is definitely more than <0.01. I need to confirm that. Yep, 0.13 is a higher number than any value less than 0.01.\n</think>\n\nTo determine if the value of Gabon is more than Tonga, we analyze the death rates from the bar chart:  \n\n- Gabon’s death rate is 0.13 (deaths per 100,0"
+        },
+        {
+          "id": "chartqa_219",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's solve this problem step by step. First, we need to identify the smallest two bars and the third smallest bar from the bar chart. \n\nFirst, let's list all the values in ascending order (from smallest to largest) to find the smallest, second smallest, and third smallest.\n\nLooking at the chart:\n\n- Low bone mineral density: 13,135\n- Low physical activity: 48,930\n- No access to handwashing facility: 68,467\n- Poor sanitation: 92,072\n- Iron deficiency: 9"
+        },
+        {
+          "id": "chartqa_223",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem. First, we need to find the land use values for Milk and Cheese, add them together, then compare that sum to the value for Lamb & Mutton.\n\nFirst, look at the chart:\n\n- Milk: 27.1 m²\n- Cheese: 39.8 m²\n- Lamb & Mutton: 184.8 m²\n\nNow calculate the sum of Milk and Cheese: 27.1 + 39.8 = 66.9 m².\n\nNow compare 66.9 to 184.8"
+        },
+        {
+          "id": "chartqa_241",
+          "gold": "yes",
+          "pred": "yes",
+          "correct": true,
+          "generated": "So, let's look at the bar chart. The value for Ghana is 216, and for Vietnam it's 197. We need to check if 216 is more than 197. 216 is greater than 197, so the answer is yes.\n</think>\n\nTo determine if the value of Ghana is more than Vietnam in Tuberculosis cases, we compare their respective values from the bar chart:  \n\n- Ghana’s tuberculosis incidence per 100,000 people in 2000 is 216.  \n- Vietnam’s tuberculosis incidence per"
+        },
+        {
+          "id": "chartqa_247",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is to find the average of the three countries' percentages and check if it's more than 90%. First, I need to get the values for each country. Algeria is 99.67%, Indonesia is 96.4%, and Portugal is 87.63%. \n\nTo find the average, I need to add them up and divide by 3. Let's calculate the sum first. 99.67 + 96.4 + 87.63. Let's add 99.67 and 96"
+        },
+        {
+          "id": "chartqa_259",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to find the values for Chad and Mauritania, add them together, and then compare that sum to Mongolia's value.\n\nFirst, look at the bar chart. Chad's expected years of schooling is 5.6 years. Mauritania's is 7.1 years. So we need to add those two numbers: 5.6 + 7.1. Let's calculate that. 5.6 + 7.1 = 12.7 years.\n\nNow, Mongolia's value is 11.8 years. We need to"
+        },
+        {
+          "id": "chartqa_261",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's solve this problem. First, we need to identify the values of the three bars. The largest bar is Czechia with 21.37%. The smallest two bars are Paraguay (12.51%) and Laos (9.29%). Wait, no, wait: smallest two would be the two smallest values. Let's check: Czechia is 21.37%, Paraguay is 12.51%, Laos is 9.29%. So the two smallest are Laos (9.29%) and Paraguay (12.51%). Now"
+        },
+        {
+          "id": "chartqa_265",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is to find if the average of the three percentages (Morocco, Portugal, Saint Lucia) is greater than 6%. First, I need to get the values for each. Morocco is 7.19%, Portugal is 6.85%, Saint Lucia is 6.2%. \n\nTo find the average, I add them up and divide by 3. Let's calculate the sum: 7.19 + 6.85 + 6.2. Let's do that step by step. 7.19 + 6.85 is"
+        },
+        {
+          "id": "chartqa_269",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the sum of the smallest two values is greater than the largest value. First, I need to identify the values for each country. \n\nLooking at the bar chart: Slovenia has 12.6 liters, Nauru has 6 liters, Ecuador has 4.4 liters. \n\nSo the values are 12.6, 6, and 4.4. Now, find the smallest two values. The smallest is 4.4 (Ecuador), then the next smallest is 6 (Nauru). The largest value is 12"
+        },
+        {
+          "id": "chartqa_271",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to identify the values of each bar. The largest bar is Greece with 35.84%. The smallest two bars are United States (21.05%) and Costa Rica (24.87% in 2012, but we take the value as given). Wait, no, the smallest two are United States (21.05%) and Costa Rica (24.87%)? Wait, no, let's check the values. Greece is 35.84%, Costa Rica is 2"
+        },
+        {
+          "id": "chartqa_273",
+          "gold": "yes",
+          "pred": "yes",
+          "correct": true,
+          "generated": "So, let's look at the bar chart. The Female share in agriculture is 60.65% (2008), and the Female share in industry is 42.33% (2008). We need to compare these two numbers. 60.65 is greater than 42.33, so the answer is yes.\n</think>\n\nTo determine if the value of \"Female share in agriculture\" is more than \"Female share in industry\", we compare their respective percentages from the bar chart:  \n\n- Female share in agriculture: 60.65% (2"
+        },
+        {
+          "id": "chartqa_293",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The question is asking if the sum of the last three places (which I think are Philippines, Net Food Importing Developing Countries, and Gabon) is more than Oceania's yield. First, let's list out the values:\n\nOceania: 18.18 t\n\nPhilippines: 6.67 t\n\nNet Food Importing Developing Countries: 5.8 t\n\nGabon: 5.63 t\n\nNow, sum the last three: 6.67 + 5.8 + 5.63. Let's calculate that"
+        },
+        {
+          "id": "chartqa_299",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem. First, we need to find the average of the percentages for Mauritius, Bhutan, Italy, and Eswatini. Let's list out the percentages:\n\n- Mauritius: 97%\n- Bhutan: 95%\n- Italy: 95%\n- Eswatini: 90%\n\nTo find the average, we add all these numbers and divide by the number of countries (which is 4).\n\nFirst, sum them up: 97 + 95 + 95 + 90. Let's calculate that step by step."
+        }
+      ]
+    },
+    "blind_randomimage": {
+      "accuracy": 0.20833333333333334,
+      "num_valid": 48,
+      "num_skipped": 0,
+      "num_correct": 10,
+      "gold_counts": {
+        "no": 25,
+        "yes": 23
+      },
+      "pred_counts": {
+        "no": 23
+      },
+      "records": [
+        {
+          "id": "chartqa_3",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's see. The problem is asking if the sum value of Madagascar is more than Fiji. But wait, the image provided is about U.S. adults and their views on COVID-19 threats to personal finances and health. There's no mention of Madagascar or Fiji in the image. So the question is based on data that's not present here. I need to point out that the image doesn't contain information about Madagascar or Fiji, so the question can't be answered with the given data.\n</think>\n\nThe image provided is a chart about U.S. adults' perceptions of COVID - 19 threats to personal finances"
+        },
+        {
+          "id": "chartqa_7",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the sum of the percents of \"Charismatic\" and \"Well-qualified to be president\" is more than \"A strong leader\". Wait, but first, I need to check the data. Wait, the image provided is about gene editing for babies, not about presidential qualities. Oh, maybe there's a mix-up here. Wait, the user's question is about \"Charismatic and Well-qualified to be president\" vs \"A strong leader\", but the image is about gene editing. That's a problem. Wait, maybe the user made a mistake, or maybe"
+        },
+        {
+          "id": "chartqa_19",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to identify the percentages for each category in the pie chart. Let's list them out:\n\n- Very unfavorable: 79%\n- Favorable: 10%\n- Somewhat unfavorable: 3%\n- Don't know: 8%\n\nNow, we need to find the largest two bars and the smallest three bars. Let's sort the percentages in descending order to see which are the largest and smallest.\n\nDescending order: 79% (Very unfavorable), 10% (Favorable), 8% (Don't know),"
+        },
+        {
+          "id": "chartqa_24",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's look at the problem. The question is asking if the percentage value of \"STEM\" segment is 52. Wait, first, check the graph. The graph is about U.S. Democrats' positive view of NATO surges, with Democrat (blue) and Republican (red) lines. The x-axis is years 2009-2017, y-axis is percentage. The \"STEM\" term isn't in the graph. Wait, maybe a typo? Wait, the red line is Republican. Let's check the red line values. In 2015, the red line"
+        },
+        {
+          "id": "chartqa_25",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, we need to understand what the question is asking. It says, \"Is the largest segment greater than sum of all the other segments?\" Wait, but the graph is about percentages of registered voters who hold different views. Let's check the data.\n\nFirst, let's list out the percentages for each year. The two lines are:\n\n1. \"It really matters who wins the presidential election\" (let's call this Group A)\n2. \"Things will be pretty much the same regardless of who is elected\" (Group B)\n\nWe need to find the largest segment ("
+        },
+        {
+          "id": "chartqa_33",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's see. The problem is asking if the \"Not at all\" value for \"Use military force wisely\" is more than \"Handle an international crisis.\" But wait, the image provided is a graph about secondary graduation rates for Italy, Spain, Mexico from 2010-2018. There's no data about \"Use military force wisely\" or \"Handle an international crisis\" here. So the question is based on a different dataset, but the given image is about graduation rates. Therefore, the information needed to answer the question isn't present in the provided graph. I need to point out that"
+        },
+        {
+          "id": "chartqa_52",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's look at the problem. The question is about a pie chart, not a bar chart. Wait, the user mentioned \"light blue bar\" but the image is a pie chart. Let's check the pie chart data: Support 80%, Oppose 17%, DK 3%. The smallest value is DK at 3%. The question says \"light blue bar have smallest value which is 22\"—but first, the chart is a pie chart, not a bar chart. Also, the smallest value in the pie chart is 3%, not 22. So the answer is no."
+        },
+        {
+          "id": "chartqa_53",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's try to figure out this problem. First, let's understand what the question is asking. The question is about the median value of the light green bars. Wait, first, let's look at the bar chart. The chart has three countries: Egypt, Namibia, Luxembourg. The bars are colored—Egypt's bar is light green (teal), Namibia is brown, Luxembourg is... well, Luxembourg's bar is 0%, so maybe no color? Wait, the question says \"light green bars\"—so only Egypt's bar is light green. Wait, let's check the values.\n\nFirst, list"
+        },
+        {
+          "id": "chartqa_54",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's check the problem. The question is asking if the color of the 15% segment is light green. Wait, first, I need to look at the bar chart. Wait, the chart shows population by region, not percentages. Wait, maybe the user made a mistake? Wait, no, the chart is about population, not percentages. Wait, the question says \"15% segment\"—but the chart doesn't have percentages. Wait, maybe the user is confused. Wait, let's check the chart again.\n\nWait, the chart is titled \"Population of all world regions, including the UN projection until"
+        },
+        {
+          "id": "chartqa_69",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the number of deaths per 100,000 in 2002 in Slovenia is more than that of Costa Rica and Colombia combined. But wait, the image provided is about installed geothermal energy capacity in 2005, not about death rates. So there's a mismatch here. The image doesn't have any data on deaths per 100,000 for Slovenia, Costa Rica, or Colombia. Therefore, the information needed to answer the question isn't present in the given image. I need to point out that the image"
+        },
+        {
+          "id": "chartqa_72",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's look at the problem. The question is asking if the value of the light green bar (which is Greece) is 35 in 1989. First, check the chart details. The chart is titled \"Share of social protection in government expenditure, 2010\". So the year is 2010, not 1989. The Greece bar shows 35.84%, which is for 2010. The question mentions 1989, which isn't in the chart. So the answer is no because the chart is from"
+        },
+        {
+          "id": "chartqa_77",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's see. First, I need to find the leftmost bars. Wait, the bars are for South Korea, Spain, Slovenia. The leftmost bar would be the one with the smallest value? Wait, no, the x-axis is the amount of CO2 emissions. So the leftmost bar is the one with the smallest value. Let's check the values:\n\nSouth Korea: 21.32 million t\n\nSpain: 19.72 million t\n\nSlovenia: 977,633 t\n\nWait, 977,633 t is"
+        },
+        {
+          "id": "chartqa_91",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to identify the two extreme values. The extreme values are the highest and the lowest percentages. Looking at the bar chart:\n\n- Iceland: 100%\n- Hungary: 99.96%\n- Turkey: 95.49%\n- Cambodia: 52.4%\n\nSo the highest value is Iceland at 100%, and the lowest is Cambodia at 52.4%. These are the two extreme values.\n\nNext, we need to find the average of these two extreme values. The formula for average is ("
+        },
+        {
+          "id": "chartqa_101",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem. First, we need to identify the values of each bar. The United Kingdom has 0.3%, Colombia has 0.1%, and Mauritius has 0.06%. The smallest two bars are Colombia (0.1%) and Mauritius (0.06%). Let's add those two: 0.1 + 0.06 = 0.16. The largest bar is United Kingdom with 0.3%. Now we need to check if 0.16 is greater than 0.3. 0.16 is less"
+        },
+        {
+          "id": "chartqa_113",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the statement \"Total population in Africa, North America and South America is more than Europe\" is correct. But wait, the image provided is about U.S. adults checking online reviews, which is a Pew Research Center survey. The image doesn't have any data about population sizes of continents. So the question is about population data, but the given image is unrelated. \n\nFirst, I need to check if the image contains any population data. The image is a bar chart about U.S. adults' behavior regarding online reviews. The source is a survey from 2015"
+        },
+        {
+          "id": "chartqa_117",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to solve this problem step by step. First, we need to identify the gray bars. The gray bars are labeled \"MSNBC\" in the graph. Let's list out the values for each year (from 98 to 12) for MSNBC.\n\nLooking at the graph:\n\n- 98: 8\n- 00: 15\n- 02: 11\n- 04: 15\n- 06: 15\n- 08: 11\n- 10: 11\n-"
+        },
+        {
+          "id": "chartqa_125",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, we need to understand what \"segments\" mean here. The graph has two lines: Hungary (red) and Lithuania (blue). Each year from 2007 to 2019 is a segment, so there are 13 years (2007-2019 inclusive). Wait, let's count the years: 2007,2008,...,2019. That's 13 years. So for each country, we have 13 data points. But the question says \"all"
+        },
+        {
+          "id": "chartqa_127",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, we need to understand what \"Decrease value\" and \"Increase\" refer to here. The graph shows two lines: China's economic strength (green) and military strength (blue). Let's look at the changes over the years.\n\nFirst, let's check the economic strength. From 2012 to 2016, it went from 59 to 50, so that's a decrease of 59 - 50 = 9. Then from 2016 to 2018, it went from"
+        },
+        {
+          "id": "chartqa_137",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's try to figure out this problem. First, I need to understand what the question is asking. It's about the median of the green bar (which is North Macedonia) and the blue bar (Tonga). Wait, no, the graph is a line graph, not bar graph. So we need to look at the values for each country over the years 2005-2012, find the median for each, then compare.\n\nFirst, let's list the years: 2005, 2006, 2007, 2008,"
+        },
+        {
+          "id": "chartqa_138",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's look at the pie chart. The question is asking if the green graph represents \"Satisfied.\" First, check the labels. The pie chart has three sections: \"U.S. has responsibility\" (39%), \"U.S. doesn't have responsibility\" (55%), and \"Don't know\" (6%). Wait, the colors—usually, pie charts use different colors for each category. But the question mentions \"green graph\"—wait, maybe the user is referring to a specific color. Wait, the chart's description: the \"Don't know\" is 6%, which is probably a small"
+        },
+        {
+          "id": "chartqa_142",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, I need to understand what the question is asking. Wait, the user provided a pie chart about support for the army to fight drug traffickers, but the question mentions a \"green graph from 2002 to 2006\" and an \"orange graph.\" Hmm, maybe there's a missing context here? Because the image shown is a pie chart from Pew Research Center Q137, which has Support (80%, brown), Oppose (17%, light brown), DK (3%, orange). But the question refers to a green"
+        },
+        {
+          "id": "chartqa_151",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's try to figure out this problem. First, I need to understand what the question is asking. Wait, the problem mentions \"Approve graph\" and \"Disapprove graph,\" but the image provided is a bar chart about financial market regulation in Dominica, 2015. Hmm, maybe there's a miscommunication here. Wait, no—wait, the user might have made a mistake, but let's check the image.\n\nWait, the image is a bar chart with categories like \"Net open position in foreign exchange to capital,\" \"Non-performing loans net of provisions to capital,\" etc. Each"
+        },
+        {
+          "id": "chartqa_158",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's look at the problem. The question is about whether the Approve and Disapprove lines are almost merged in March. Wait, first, check the graph. The graph is titled \"Russian Ratings of U.S., EU Collapse\" with Favorable views. The lines are EU (orange) and U.S. (green). The x-axis is years 2013-2015, not months. Wait, the question says \"March\"—but the graph is from a 2015 survey, but the x-axis is years, not months. Wait, maybe the user made a mistake?"
+        },
+        {
+          "id": "chartqa_162",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "So, let's look at the pie chart. The dark blue line is labeled \"DK\" with 3%. The question is asking if there's a value 30 in the dark blue line. The dark blue line's value is 3%, not 30. So the answer is no.\n</think>\n\nTo determine if there is a value 30 in the dark blue line, we analyze the pie chart:  \n\n- The dark blue segment is labeled “DK” and has a value of 3%.  \n- There is no value of 30 associated with the dark blue line.    \n\nThus, the answer is"
+        },
+        {
+          "id": "chartqa_166",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's look at the problem. The question is asking if the color of the DK segment is gray. First, I need to check the graph. Wait, the graph has two lines: \"Illegal\" (brown) and \"Legal\" (gold). But what's DK? Wait, maybe DK is \"Don't Know\"? But in the graph, the labels are \"Illegal\" and \"Legal\". Wait, the problem might be a typo or maybe I misread. Wait, the graph's y-axis is \"% saying the use of marijuana should be...\", and the two lines are Illegal (brown) and Legal (gold"
+        },
+        {
+          "id": "chartqa_169",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, we need to look at the graph. The graph has two lines: Favor (dark blue) and Oppose (light blue). We need to find the smallest segment value and the largest segment value, then check if the smallest is one third of the largest.\n\nFirst, let's list all the values for Favor and Oppose:\n\nFavor (dark blue):\n- Sept 2008: 67\n- Apr 2009: 68\n- Feb 2010: 63\n- June 201"
+        },
+        {
+          "id": "chartqa_171",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to solve this problem step by step. First, we need to understand what the question is asking. It says: \"Does the sum of smallest two segment value is greater then the the largest segment value of the graph?\"\n\nFirst, let's identify all the segment values in the graph. The graph has different categories (Jordan, Syrian, Jordanian, Lebanon, Shia, Sunni, Christian, Turkey) and their responses: More, About the same, Fewer, None (VOL). We need to list all the numerical values from each segment.\n\nLet's list all the values:\n\n- Jordan: More="
+        },
+        {
+          "id": "chartqa_175",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, we need to understand what the question is asking. It says, \"Is the median of all three data values equal to 32?\" Wait, but the pie chart has multiple data values: 29%, 30%, 16%, 13%, 11%. Wait, maybe the question is referring to three specific data values? Wait, no, let's check the problem again.\n\nWait, the problem says \"all three data values\"—but the pie chart has five categories: Fewer (29%), Don't know (30"
+        },
+        {
+          "id": "chartqa_177",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the average of all the data values is greater than 40. First, I need to find the data values. The chart shows two countries: Cayman Islands with 95.45% and Belize with 7.21%. So there are two data points. To find the average, I need to add them together and divide by the number of data points, which is 2.\n\nLet's calculate the sum first: 95.45 + 7.21 = 102.66. Then divide by 2:"
+        },
+        {
+          "id": "chartqa_187",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's try to figure out this problem. First, we need to understand what the question is asking. It says, \"Is the sum of two smallest segment greater than largest segment?\" Wait, but the graph is about secondary graduation rates for Italy, Spain, and Mexico from 2010 to 2018. Maybe \"segment\" here refers to the data points or the values for each country? Wait, no, maybe it's about the total change over the period for each country? Or maybe the sum of the two smallest annual changes? Wait, the question is a bit unclear, but let's"
+        },
+        {
+          "id": "chartqa_188",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's look at the problem. The question is about whether the color of the right-side bars is the lightest. Wait, first, check the graph. The graph has two lines: \"Hispanic eligible voters\" (brown) and \"Hispanic voters\" (yellow). Wait, the user says \"right-side bars\"—but the graph is a line graph, not bars. Maybe a typo, but let's check the colors. The \"Hispanic voters\" line is yellow, which is lighter than the brown \"Hispanic eligible voters\" line. Now, the right side of the graph—both lines go to"
+        },
+        {
+          "id": "chartqa_201",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's see. The problem is asking if the sum of Georgia and Western Asia is more than Finland. But wait, the image provided is about \"Emissions of air pollutants, Italy, 2008\" with NOx, CO, SOx. There's no mention of Georgia, Western Asia, or Finland in the image. So the data needed to answer this question isn't present here. The image is about Italy's air pollutants, not about those countries. So I need to point out that the information isn't available in the given chart.\n</think>\n\nThe provided image is a bar chart about **em"
+        },
+        {
+          "id": "chartqa_203",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's try to solve this problem. First, we need to find all the bar values from the chart. Let's list them out:\n\nTotal: 32 (Citizens should have to prove) and 67 (Everything possible...). Wait, no, the question is about the bars. Wait, the chart has two categories: \"Citizens should have to prove...\" and \"Everything possible...\". So each row has two bars. Let's list all the values:\n\n- Total: 32, 67\n- Rep/Lean Rep: 51, 48\n- Conservative:"
+        },
+        {
+          "id": "chartqa_205",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. First, I need to find the values of all the bars. The bars are for Vanuatu, Togo, and Somalia. Their scores are 43 (2017), 30, and 8. Wait, the question is about the median value of all the bars. So first, list the values: 8, 30, 43. To find the median, we need to order them from smallest to largest. So 8, 30, 43. The median is the middle number when there's an odd number of values."
+        },
+        {
+          "id": "chartqa_207",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the average value of Philippines and North America is greater than 2500 MW. But wait, the image provided is about the share of wasted children in 2010 for countries like Haiti, Libya, etc. There's no mention of Philippines, North America, or MW (megawatts) in the image. The image is about child wasting percentages, not energy production or anything related to MW. So the question is based on a different dataset that's not shown here. Since the given image doesn't have any data about Philippines, North America, or MW"
+        },
+        {
+          "id": "chartqa_213",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's look at the problem. The question is asking if the value of Gabon is more than Tonga. But first, check the bar chart provided. The countries listed are Jamaica, Niger, Bangladesh, Azerbaijan, Albania. There's no Gabon or Tonga in the chart. So the data for Gabon and Tonga isn't present here. Therefore, we can't determine if Gabon's value is more than Tonga's because those countries aren't in the chart.\n</think>\n\nTo determine if the value of Gabon is more than Tonga, we first check the provided bar chart. The chart lists"
+        },
+        {
+          "id": "chartqa_219",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to identify the values of the bars from the chart. Let's list all the percentages:\n\n- U.S.: 43\n- Germany: 63\n- Italy: 63\n- Greece: 62\n- Poland: 62\n- France: 54\n- Spain: 48\n- UK: 37\n\nNow, we need to find the smallest two bars. Let's sort the values in ascending order to make it easier:\n\n37 (UK), 43 (U.S.),"
+        },
+        {
+          "id": "chartqa_223",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's try to figure out this problem. First, we need to check what the question is asking. It says: \"Is the sum value of Milk product and cheese more then Lamb and Mutton?\" Wait, but looking at the chart, there's no \"cheese\" listed. The chart has \"Milk (organic)\" and \"Milk (non-organic)\", but no cheese. Maybe that's a typo? Wait, the chart is about land use per 100 kilocalories by food and production type. Let's check the categories.\n\nFirst, let's list the relevant items. The question"
+        },
+        {
+          "id": "chartqa_241",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if Ghana's tuberculosis cases are more than Vietnam's. But wait, the image provided is a pie chart about STEM graduates employed in STEM workforce. There's no information about Ghana, Vietnam, or tuberculosis cases here. The chart is from Pew Research Center about college graduates in STEM fields. So the question is unrelated to the image. I need to point out that the image doesn't contain data on Ghana, Vietnam, or tuberculosis, so the question can't be answered with the given information.\n</think>\n\nThe image provided is a pie chart about the employment of STEM - trained college graduates in"
+        },
+        {
+          "id": "chartqa_247",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the average percentage share of primary energy from fossil fuels of all three countries is more than 90%. But wait, the image provided is a bar chart about Japanese concerns regarding various threats, like cyberattacks, ISIS, climate change, etc. There's no information here about primary energy from fossil fuels or any countries' energy data. The chart is from Pew Research Center's 2016 survey on Japanese attitudes. So the question is about something not present in the image. I need to point out that the image doesn't contain the necessary data to answer the question."
+        },
+        {
+          "id": "chartqa_259",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the sum of Chad and Mauritania is greater than the value of Mongolia. But wait, looking at the image provided, the chart is about European Millennials and their views on success being out of their hands. The countries listed are U.S., Germany, Italy, Greece, Poland, France, Spain, UK. There's no mention of Chad, Mauritania, or Mongolia in the chart. So first, I need to check if those countries are in the data. The chart only has European countries (and U.S.), so Chad, Mauritania, Mongolia aren't present. Therefore"
+        },
+        {
+          "id": "chartqa_261",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's try to figure out this problem. First, we need to understand what the question is asking. It says: \"Is the sum of smallest two bar is greater then the largest bar?\" Wait, probably \"bars\" here refer to the percentages in the \"Top 25% of tweeters\" column, since that's the main part we're comparing. Let's check the data.\n\nFirst, let's list the percentages for the \"Top 25% of tweeters\" for each country:\n\n- New Zealand: 76%\n- Australia: 71%\n- Canada: 68%"
+        },
+        {
+          "id": "chartqa_265",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's see. The question is asking if the average percentage of all three bars (Disapprove, Approve, and maybe the total? Wait, no, each category has two bars: Disapprove and Approve. Wait, the question says \"all three bars\"—wait, no, each row has two bars: Disapprove and Approve. Wait, maybe the question is about the Disapprove percentages? Wait, no, let's check the problem again.\n\nWait, the problem says: \"Is the average percentage of all three bars greater than 6%?\" Wait, maybe \"all three bars\" is a mistake"
+        },
+        {
+          "id": "chartqa_269",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to identify the values from the pie chart. The chart shows:\n\n- Very unfavorable: 79%\n- Favorable: 10%\n- Somewhat unfavorable: 3%\n- Don't know: 8%\n\nNow, we need to find the smallest two values. Let's list all the percentages: 79, 10, 3, 8. The smallest two are 3 and 8. Let's sum them: 3 + 8 = 11.\n\nNext, the largest value is 79."
+        },
+        {
+          "id": "chartqa_271",
+          "gold": "yes",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's solve this problem step by step. First, we need to identify the values of the bars. The bars are for U.S. (92.9), UK (91.5), France (83.7), Italy (80.3), Portugal (84.9). \n\nFirst, find the smallest two values. Let's list all the numbers: 92.9, 91.5, 83.7, 80.3, 84.9. Let's sort them in ascending order: 80.3 (Italy),"
+        },
+        {
+          "id": "chartqa_273",
+          "gold": "yes",
+          "pred": "no",
+          "correct": false,
+          "generated": "Got it, let's see. The problem is asking if the female share in agriculture is more than in industry. But wait, the image provided is a pie chart about seniors using online social networks. There's no data about agriculture or industry here. The pie chart shows percentages for \"Use SNS\" (27%), \"Go online, no SNS\" (32%), and \"Do not go online\" (41%). So the question is about agriculture and industry, which aren't mentioned in the chart. Therefore, the information needed to answer the question isn't present in the given image. I need to point out that"
+        },
+        {
+          "id": "chartqa_293",
+          "gold": "no",
+          "pred": "no",
+          "correct": true,
+          "generated": "Got it, let's try to figure out this problem. First, I need to understand what the question is asking. The question is: \"Is the sum of all the last three places is more then Oceania?\" Wait, but looking at the chart, the regions are EU, WHO, Chinese government. Wait, maybe \"Oceania\" is a typo? Wait, no, the chart has EU, WHO, Chinese government. Wait, maybe the user made a mistake, but let's check the chart again.\n\nWait, the chart is about \"Few Americans trust information about the coronavirus outbreak from the Chinese government\". The rows"
+        },
+        {
+          "id": "chartqa_299",
+          "gold": "no",
+          "pred": null,
+          "correct": false,
+          "generated": "Got it, let's see. The question is asking if the average percentage of all the values is less than 90. First, I need to list all the values from the graph. Let's check each category:\n\n- Democrat: 55, 54, 51, 54\n- Republican: 33, 34, 38, 35\n- Independent: 11, 11, 10, 11\n\nWait, let's count how many values there are. For each of the four categories (Full voter file, Have phone number,"
+        }
+      ]
+    }
+  }
+}

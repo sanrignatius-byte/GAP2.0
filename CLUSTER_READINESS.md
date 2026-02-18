@@ -60,3 +60,46 @@
 
 - **现在是“可以上集群试跑”的状态**，但建议先小样本验证关键路径，再做全量。
 - 你的方案本身方向对，下一步价值最大的是“稳住流程 + 提升评估严谨性”。
+
+## 2026-02-18 阶段更新（Phase 2）
+
+### 本轮完成项
+
+- 已修复 probing 索引链路，`answer_token` 改为 teacher-forced 标签位置（不再与 instruction token 重合）：
+  - `src/models/input_preparation.py`
+  - `src/causal/probing.py`
+  - `scripts/run_phase2_text_probing.py`
+- 已在集群重跑四组 text probing：
+  - `original`
+  - `blind_black`
+  - `blind_mean`
+  - `blind_randomimage`
+- 已补充两类分析：
+  - `Original - Random` 的 bootstrap 显著性分析
+  - 模型真实生成准确率（Original vs Blind Random）
+
+### 关键结果（48 个 yes/no 样本）
+
+- `text_instruction_token`（post 层 24-47）：
+  - Original: `0.7242`
+  - Blind Random: `0.5780`
+  - Delta: `+0.1462`
+  - Bootstrap 95% CI: `[+0.1291, +0.1627]`
+- `visual_token`（post 层 24-47）：
+  - Original: `0.3611`
+  - Blind Random: `0.5131`
+  - Delta: `-0.1520`
+  - Bootstrap 95% CI: `[-0.1751, -0.1294]`
+- `answer_token`（teacher-forced 标签位置）出现全层 `1.0`，说明该定义存在标签泄漏风险，当前不适合作为“同化强度”证据。
+
+### 模型生成准确率（与 probing 同一 48 样本）
+
+- Original: `0.3125`（15/48）
+- Blind Random: `0.2083`（10/48）
+- 配对 delta: `+0.1042`，bootstrap 95% CI `[-0.0625, +0.2708]`（未显著）
+
+### 当前判断
+
+- “文本侧表征差异（Original > Random）”在 probe 指标上显著存在；
+- 但“模型最终行为层面（generation accuracy）”的提升尚未达到统计显著；
+- 下一步需把 `answer_token` 改成“预测位（答案前一位）”而非标签位，避免泄漏并继续验证因果叙事。

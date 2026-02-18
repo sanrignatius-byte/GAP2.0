@@ -25,6 +25,7 @@ import sys
 import json
 import argparse
 import random
+from typing import Optional
 
 import torch
 import numpy as np
@@ -40,6 +41,48 @@ from src.attn.attention_flow import compute_layer_attention_flow, compute_unifor
 from src.visualization.plots import GAPVisualizer
 
 
+def _is_oom_error(exc: BaseException) -> bool:
+    if isinstance(exc, torch.cuda.OutOfMemoryError):
+        return True
+    msg = str(exc).lower()
+    return "out of memory" in msg and "cuda" in msg
+
+
+def _parse_pixel_schedule(max_pixels: Optional[int], fallback_csv: str) -> list[Optional[int]]:
+    schedule: list[Optional[int]] = [max_pixels]
+    for item in fallback_csv.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        value = int(item)
+        if value <= 0:
+            continue
+        schedule.append(value)
+
+    # Deduplicate while preserving order.
+    deduped: list[Optional[int]] = []
+    seen = set()
+    for value in schedule:
+        if value in seen:
+            continue
+        seen.add(value)
+        deduped.append(value)
+    return deduped
+
+
+def _prepare_with_processor(sample: dict, bundle, device: str, processor):
+    """Prepare inputs using a temporary processor override."""
+    original_processor = bundle.processor
+    original_tokenizer = bundle.tokenizer
+    bundle.processor = processor
+    bundle.tokenizer = processor.tokenizer
+    try:
+        return prepare_model_input(sample, bundle, device)
+    finally:
+        bundle.processor = original_processor
+        bundle.tokenizer = original_tokenizer
+
+
 def main():
     parser = argparse.ArgumentParser(description="Phase 2: Attention Flow")
     parser.add_argument("--config", type=str, default="configs/default.yaml")
@@ -49,6 +92,13 @@ def main():
     parser.add_argument("--output_dir", type=str, default=None)
     parser.add_argument("--attn_implementation", type=str, default="eager",
                         help="Attention implementation (must be 'eager' to get weights)")
+    parser.add_argument("--max_pixels", type=int, default=401408,
+                        help="Initial Qwen processor max_pixels to reduce visual tokens.")
+    parser.add_argument("--fallback_max_pixels", type=str, default="200704,100352,62720",
+                        help="Comma-separated fallback max_pixels values used after OOM.")
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--min_success_samples", type=int, default=5,
+                        help="Minimum successful samples required to accept run.")
     args = parser.parse_args()
 
     cfg = OmegaConf.load(args.config)
@@ -65,7 +115,9 @@ def main():
         rotation="10 MB",
     )
 
+    pixel_schedule = _parse_pixel_schedule(args.max_pixels, args.fallback_max_pixels)
     logger.info(f"attn_implementation={args.attn_implementation!r}")
+    logger.info(f"pixel schedule={pixel_schedule}")
 
     # Load model with eager attention so weights are returned
     logger.info("Loading model...")
@@ -74,6 +126,7 @@ def main():
         device=cfg.model.device,
         dtype=cfg.model.dtype,
         attn_implementation=args.attn_implementation,
+        processor_max_pixels=pixel_schedule[0],
     )
     num_layers = bundle.num_layers
     logger.info(f"Model loaded: {num_layers} layers")
@@ -91,10 +144,26 @@ def main():
         all_samples.extend(samples)
 
     if len(all_samples) > args.num_samples:
-        random.seed(42)
+        random.seed(args.seed)
         all_samples = random.sample(all_samples, args.num_samples)
 
     logger.info(f"Using {len(all_samples)} samples for attention flow analysis")
+
+    # For Qwen, keep a lazy cache of processors at different max_pixels values.
+    is_qwen = "qwen" in cfg.model.name.lower()
+    processor_cache: dict[Optional[int], object] = {pixel_schedule[0]: bundle.processor}
+
+    def get_processor(max_pixels: Optional[int]):
+        if max_pixels in processor_cache:
+            return processor_cache[max_pixels]
+        from transformers import AutoProcessor
+
+        kwargs = {"trust_remote_code": True}
+        if max_pixels is not None:
+            kwargs["max_pixels"] = int(max_pixels)
+        proc = AutoProcessor.from_pretrained(cfg.model.name, **kwargs)
+        processor_cache[max_pixels] = proc
+        return proc
 
     # ---- Per-layer accumulators ----
     t2v_accum: dict[int, list[float]] = {l: [] for l in range(num_layers)}
@@ -103,49 +172,97 @@ def main():
     uniform_baselines: list[float] = []
     n_visual_list: list[int] = []
     n_text_list: list[int] = []
+    processed_sample_ids: list[str] = []
+    per_sample_max_pixels: dict[str, Optional[int]] = {}
+    skipped_oom = 0
 
     for i, sample in enumerate(all_samples):
         logger.info(f"Sample {i+1}/{len(all_samples)}: {sample['id']}")
+        sample_done = False
 
-        inputs, _ = prepare_model_input(sample, bundle, cfg.model.device)
-        visual_range = find_visual_token_positions(bundle, inputs["input_ids"])
-        vstart, vend = visual_range
-        seq_len = inputs["input_ids"].shape[1]
+        schedules = pixel_schedule if is_qwen else [None]
+        for max_pixels in schedules:
+            outputs = None
+            attentions = None
+            inputs = None
+            try:
+                if is_qwen:
+                    processor = get_processor(max_pixels)
+                    inputs, _ = _prepare_with_processor(sample, bundle, cfg.model.device, processor)
+                else:
+                    inputs, _ = prepare_model_input(sample, bundle, cfg.model.device)
 
-        n_visual = vend - vstart
-        n_text = seq_len - vend
-        n_visual_list.append(n_visual)
-        n_text_list.append(n_text)
+                visual_range = find_visual_token_positions(bundle, inputs["input_ids"])
+                vstart, vend = visual_range
+                seq_len = inputs["input_ids"].shape[1]
 
-        ub = compute_uniform_baseline(visual_range, seq_len)
-        uniform_baselines.append(ub)
+                n_visual = vend - vstart
+                n_text = seq_len - vend
 
-        logger.debug(
-            f"  visual_range=({vstart},{vend}), n_visual={n_visual}, "
-            f"n_text={n_text}, uniform_baseline={ub:.4f}"
+                ub = compute_uniform_baseline(visual_range, seq_len)
+
+                logger.debug(
+                    f"  max_pixels={max_pixels}, visual_range=({vstart},{vend}), "
+                    f"n_visual={n_visual}, n_text={n_text}, uniform_baseline={ub:.4f}"
+                )
+
+                # Single forward pass with output_attentions=True
+                with torch.no_grad():
+                    outputs = bundle.model(**inputs, output_attentions=True)
+
+                # outputs.attentions: tuple of (1, H, S, S) tensors, one per layer
+                attentions = outputs.attentions
+                if attentions is None:
+                    raise RuntimeError(
+                        "Model returned no attention weights. "
+                        "Ensure attn_implementation='eager' is set."
+                    )
+
+                for layer_idx, attn_tensor in enumerate(attentions):
+                    metrics = compute_layer_attention_flow(attn_tensor, visual_range)
+                    t2v_accum[layer_idx].append(metrics["text_to_visual"])
+                    v2v_accum[layer_idx].append(metrics["visual_to_visual"])
+                    # Release tensor immediately to avoid memory build-up
+                    del attn_tensor
+
+                n_visual_list.append(n_visual)
+                n_text_list.append(n_text)
+                uniform_baselines.append(ub)
+                processed_sample_ids.append(sample["id"])
+                per_sample_max_pixels[sample["id"]] = max_pixels
+                sample_done = True
+                break
+            except Exception as exc:  # noqa: BLE001
+                if _is_oom_error(exc):
+                    logger.warning(
+                        "OOM on sample={} with max_pixels={}; trying smaller setting",
+                        sample["id"],
+                        max_pixels,
+                    )
+                    torch.cuda.empty_cache()
+                    continue
+                raise
+            finally:
+                if outputs is not None:
+                    del outputs
+                if attentions is not None:
+                    del attentions
+                if inputs is not None:
+                    del inputs
+                torch.cuda.empty_cache()
+
+        if not sample_done:
+            skipped_oom += 1
+            logger.warning("Skipping sample={} after exhausting pixel schedule", sample["id"])
+
+    success_count = len(processed_sample_ids)
+    if success_count == 0:
+        raise RuntimeError("Attention flow failed: no sample completed successfully.")
+    if success_count < args.min_success_samples:
+        raise RuntimeError(
+            f"Attention flow aborted: only {success_count} samples succeeded; "
+            f"min_success_samples={args.min_success_samples}."
         )
-
-        # Single forward pass with output_attentions=True
-        with torch.no_grad():
-            outputs = bundle.model(**inputs, output_attentions=True)
-
-        # outputs.attentions: tuple of (1, H, S, S) tensors, one per layer
-        attentions = outputs.attentions
-        if attentions is None:
-            raise RuntimeError(
-                "Model returned no attention weights. "
-                "Ensure attn_implementation='eager' is set."
-            )
-
-        for layer_idx, attn_tensor in enumerate(attentions):
-            metrics = compute_layer_attention_flow(attn_tensor, visual_range)
-            t2v_accum[layer_idx].append(metrics["text_to_visual"])
-            v2v_accum[layer_idx].append(metrics["visual_to_visual"])
-            # Release tensor immediately to avoid memory build-up
-            del attn_tensor
-
-        del outputs, attentions
-        torch.cuda.empty_cache()
 
     # ---- Aggregate ----
     layers = np.arange(num_layers)
@@ -161,6 +278,8 @@ def main():
     logger.info("=" * 60)
     logger.info("Attention Flow Summary")
     logger.info("=" * 60)
+    logger.info(f"succeeded samples:       {success_count}/{len(all_samples)}")
+    logger.info(f"skipped due to OOM:      {skipped_oom}")
     logger.info(f"n_visual_tokens (mean): {np.mean(n_visual_list):.0f}")
     logger.info(f"n_text_tokens (mean):   {np.mean(n_text_list):.0f}")
     logger.info(f"uniform_baseline:       {uniform_baseline:.4f}")
@@ -195,7 +314,12 @@ def main():
         "visual_to_visual_mean": v2v_mean.tolist(),
         "t2v_normalized_mean": t2v_normalized.tolist(),
         "uniform_baseline": uniform_baseline,
-        "num_samples": len(all_samples),
+        "num_samples_requested": len(all_samples),
+        "num_samples_succeeded": success_count,
+        "num_samples_skipped_oom": skipped_oom,
+        "sample_ids_succeeded": processed_sample_ids,
+        "max_pixels_schedule": pixel_schedule,
+        "max_pixels_per_sample": per_sample_max_pixels,
         "n_visual_tokens": float(np.mean(n_visual_list)),
         "n_text_tokens": float(np.mean(n_text_list)),
         "peak_layer": peak_layer,
