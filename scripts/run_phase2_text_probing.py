@@ -98,7 +98,11 @@ def _build_probe_index_fn(bundle) -> Callable[[object, tuple[int, int], list[str
         answer_idx = valid_text[-1]
 
         if aux is not None and aux.get("answer_token_start_idx") is not None:
-            answer_idx = int(aux["answer_token_start_idx"])
+            # Use prediction position (one step before the answer token).
+            # At this position the model has NOT yet seen the answer as input,
+            # so the probe measures whether the model can predict the answer
+            # from context alone — avoiding label leakage.
+            answer_idx = int(aux["answer_token_start_idx"]) - 1
 
         if assistant_start is not None:
             if aux is None or aux.get("answer_token_start_idx") is None:
@@ -322,8 +326,8 @@ def main():
         "seed": args.seed,
         "blind_mean_rgb": blind_mean_rgb,
         "probe_targets": probe_targets,
-        "probe_index_strategy": "assistant_boundary_v2_teacher_forced",
-        "answer_token_source": "teacher_forced_first_label_token",
+        "probe_index_strategy": "assistant_boundary_v2_prediction_position",
+        "answer_token_source": "prediction_position_before_answer",
         "num_valid_samples": int(labels.shape[0]),
         "sample_ids": sample_ids,
         "results": target_results,

@@ -68,7 +68,7 @@ def main():
         choices=["original", "blind_black", "blind_mean", "blind_randomimage"],
     )
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--max_new_tokens", type=int, default=16)
+    parser.add_argument("--max_new_tokens", type=int, default=512)
     parser.add_argument(
         "--sample_ids_json",
         type=str,
