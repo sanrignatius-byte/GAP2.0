@@ -133,7 +133,7 @@ def main():
             hard_samples_all[:pilot_n],
             prepare_fn=lambda s: prepare_model_input(s, bundle, cfg.model.device),
         )
-        layer0 = [r.layer_effects[0].delta for r in pilot_results if len(r.layer_effects) > 0]
+        layer0 = [r.effects[0].delta for r in pilot_results if len(r.effects) > 0]
         if len(layer0) > 0:
             tau = max(1e-6, args.tau_ratio * float(np.mean(layer0)))
             cfg.causal.evd_threshold = float(tau)

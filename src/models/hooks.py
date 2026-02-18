@@ -70,7 +70,13 @@ class ActivationExtractor:
         Supports multiple model architectures by searching for common
         layer container names.
         """
-        # LLaVA / LLaMA architecture
+        # Qwen3-VL-MoE: model.model.language_model.layers
+        if hasattr(self.model, "model"):
+            inner = self.model.model
+            if hasattr(inner, "language_model") and hasattr(inner.language_model, "layers"):
+                return list(inner.language_model.layers)
+
+        # LLaVA / LLaMA architecture: model.model.layers
         if hasattr(self.model, "model") and hasattr(self.model.model, "layers"):
             return list(self.model.model.layers)
 
@@ -80,16 +86,12 @@ class ActivationExtractor:
             if hasattr(lm, "model") and hasattr(lm.model, "layers"):
                 return list(lm.model.layers)
 
-        # Qwen-VL architecture
+        # Qwen-VL (old): model.transformer.h
         if hasattr(self.model, "transformer") and hasattr(self.model.transformer, "h"):
             return list(self.model.transformer.h)
 
-        # Qwen2.5-VL architecture
-        if hasattr(self.model, "model") and hasattr(self.model.model, "layers"):
-            return list(self.model.model.layers)
-
         raise ValueError(
-            "Cannot find transformer layers. Supported: LLaVA, Qwen-VL. "
+            "Cannot find transformer layers. Supported: LLaVA, Qwen-VL, Qwen3-VL-MoE. "
             "Please subclass and override _find_transformer_layers()."
         )
 

@@ -194,7 +194,8 @@ class CausalPatcher:
             # Get clean visual states at this layer for corruption fn
             clean_visual = clean_acts.get(layer_idx)
             if clean_visual is not None:
-                clean_visual = clean_visual.unsqueeze(0).to(self.model.device)
+                target_device = next(self.model.parameters()).device
+                clean_visual = clean_visual.unsqueeze(0).to(target_device)
 
             corruption_fn = self._make_corruption_fn(
                 self.corruption_method, clean_visual

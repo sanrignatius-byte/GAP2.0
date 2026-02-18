@@ -109,8 +109,8 @@ def _load_qwen_vl(
     torch_dtype: torch.dtype,
     attn_implementation: Optional[str],
 ) -> ModelBundle:
-    """Load Qwen2.5-VL model from HuggingFace."""
-    from transformers import AutoProcessor, AutoModelForCausalLM
+    """Load Qwen-VL family models (Qwen2.5-VL, Qwen3-VL, Qwen3-VL-MoE)."""
+    from transformers import AutoProcessor, AutoModelForImageTextToText
 
     logger.info(f"Loading Qwen-VL model: {model_name}")
 
@@ -118,17 +118,21 @@ def _load_qwen_vl(
         "torch_dtype": torch_dtype,
         "device_map": device if device != "cpu" else None,
         "low_cpu_mem_usage": True,
+        "trust_remote_code": True,
     }
     if attn_implementation:
         kwargs["attn_implementation"] = attn_implementation
 
-    model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
-    processor = AutoProcessor.from_pretrained(model_name)
+    model = AutoModelForImageTextToText.from_pretrained(model_name, **kwargs)
+    processor = AutoProcessor.from_pretrained(model_name, trust_remote_code=True)
 
     model.eval()
 
-    num_layers = model.config.num_hidden_layers
-    hidden_dim = model.config.hidden_size
+    # Qwen3-VL-MoE nests params under text_config; older Qwen-VL uses top-level
+    config = model.config
+    text_cfg = getattr(config, "text_config", config)
+    num_layers = text_cfg.num_hidden_layers
+    hidden_dim = text_cfg.hidden_size
 
     logger.info(
         f"Qwen-VL loaded: {num_layers} layers, {hidden_dim}d, "

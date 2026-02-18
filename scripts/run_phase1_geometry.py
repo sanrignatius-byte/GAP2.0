@@ -49,6 +49,7 @@ def main():
                         help="Number of samples to average geometric metrics over")
     parser.add_argument("--probe_layers", type=str, default=None,
                         help="Comma-separated layer indices to probe (default: all)")
+    parser.add_argument("--output_dir", type=str, default=None)
     args = parser.parse_args()
 
     cfg = OmegaConf.load(args.config)
@@ -56,6 +57,9 @@ def main():
         cfg = OmegaConf.merge(cfg, OmegaConf.load(args.model_config))
     if args.model_name:
         cfg.model.name = args.model_name
+    if args.output_dir:
+        cfg.output.results_dir = args.output_dir
+        cfg.output.plots_dir = os.path.join(args.output_dir, "plots")
 
     os.makedirs(cfg.output.results_dir, exist_ok=True)
     os.makedirs(cfg.output.plots_dir, exist_ok=True)

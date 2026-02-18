@@ -47,9 +47,6 @@ data:
     - name: "textvqa"
       split: "validation"
       category: "medium"
-    - name: "vqav2"
-      split: "validation"
-      category: "easy"
 
 # Output settings
 output:

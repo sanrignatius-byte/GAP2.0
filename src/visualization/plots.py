@@ -370,6 +370,112 @@ class GAPVisualizer:
         logger.info(f"Saved: {path}")
         return path
 
+    def plot_attention_flow(
+        self,
+        layers: np.ndarray,
+        t2v_mean: np.ndarray,
+        t2v_std: np.ndarray,
+        v2v_mean: np.ndarray,
+        uniform_baseline: float,
+        readout_window: Optional[tuple] = None,
+        filename: str = "attention_flow.pdf",
+    ) -> str:
+        """Plot text-to-visual attention flow across layers (Phase 2).
+
+        Args:
+            layers: Array of layer indices.
+            t2v_mean: Mean text-to-visual attention per layer.
+            t2v_std: Std of text-to-visual attention per layer.
+            v2v_mean: Mean visual-to-visual attention per layer (sanity check).
+            uniform_baseline: Expected attention fraction under uniform distribution.
+            readout_window: Optional (start, end) layer range to highlight
+                (e.g., the Late-Stage Readout window from Phase 1).
+            filename: Output filename.
+
+        Returns:
+            Path to saved plot.
+        """
+        fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+
+        # Panel 1: Raw t2v with confidence band + uniform baseline
+        ax = axes[0]
+        ax.plot(layers, t2v_mean, "b-o", linewidth=2, markersize=4,
+                label="Text→Visual attention")
+        ax.fill_between(
+            layers,
+            t2v_mean - t2v_std,
+            t2v_mean + t2v_std,
+            alpha=0.2,
+            color="blue",
+        )
+        ax.axhline(
+            y=uniform_baseline,
+            color="gray",
+            linestyle="--",
+            linewidth=1.5,
+            label=f"Uniform baseline ({uniform_baseline:.3f})",
+        )
+        ax.plot(layers, v2v_mean, "g--s", linewidth=1.5, markersize=3,
+                alpha=0.6, label="Visual→Visual attention")
+
+        if readout_window is not None:
+            rw_start, rw_end = readout_window
+            ax.axvspan(rw_start, rw_end, alpha=0.12, color="red",
+                       label=f"Readout window ({rw_start}-{rw_end})")
+
+        ax.set_xlabel("Layer $l$")
+        ax.set_ylabel("Mean Attention Weight (to Visual Tokens)")
+        ax.set_title("(a) Text→Visual Attention per Layer")
+        ax.legend(fontsize=self.font_size - 2)
+        ax.grid(True, alpha=0.3)
+
+        # Panel 2: Normalized t2v (ratio to uniform baseline)
+        ax = axes[1]
+        t2v_norm = t2v_mean / uniform_baseline if uniform_baseline > 0 else t2v_mean
+        t2v_norm_std = t2v_std / uniform_baseline if uniform_baseline > 0 else t2v_std
+
+        ax.plot(layers, t2v_norm, "r-o", linewidth=2, markersize=4,
+                label="T2V / uniform baseline")
+        ax.fill_between(
+            layers,
+            t2v_norm - t2v_norm_std,
+            t2v_norm + t2v_norm_std,
+            alpha=0.2,
+            color="red",
+        )
+        ax.axhline(y=1.0, color="gray", linestyle="--", linewidth=1.5,
+                   label="Uniform (ratio=1)")
+
+        if readout_window is not None:
+            rw_start, rw_end = readout_window
+            ax.axvspan(rw_start, rw_end, alpha=0.12, color="red",
+                       label=f"Readout window ({rw_start}-{rw_end})")
+
+        # Annotate peak
+        peak_idx = int(np.argmax(t2v_norm))
+        ax.annotate(
+            f"Peak: layer {layers[peak_idx]}",
+            xy=(layers[peak_idx], t2v_norm[peak_idx]),
+            xytext=(layers[peak_idx] + 2, t2v_norm[peak_idx] + 0.05),
+            arrowprops=dict(arrowstyle="->", color="black"),
+            fontsize=self.font_size - 1,
+        )
+
+        ax.set_xlabel("Layer $l$")
+        ax.set_ylabel("Normalized T2V Attention (ratio to uniform)")
+        ax.set_title("(b) Normalized Text→Visual Attention")
+        ax.legend(fontsize=self.font_size - 2)
+        ax.grid(True, alpha=0.3)
+
+        fig.suptitle("Attention Flow: Text Tokens → Visual Tokens", fontsize=16, y=1.02)
+        fig.tight_layout()
+
+        path = os.path.join(self.output_dir, filename)
+        fig.savefig(path, dpi=self.dpi, bbox_inches="tight")
+        plt.close(fig)
+        logger.info(f"Saved: {path}")
+        return path
+
     def plot_singular_spectrum(
         self,
         spectra: dict[str, np.ndarray],

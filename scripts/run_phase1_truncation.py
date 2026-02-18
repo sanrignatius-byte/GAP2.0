@@ -43,6 +43,9 @@ def main():
                         help="Pre-computed cliff boundary from causal tracing")
     parser.add_argument("--step", type=int, default=2,
                         help="Step size for truncation layer sweep")
+    parser.add_argument("--num_samples", type=int, default=None,
+                        help="Override number of samples per category")
+    parser.add_argument("--output_dir", type=str, default=None)
     args = parser.parse_args()
 
     cfg = OmegaConf.load(args.config)
@@ -50,6 +53,12 @@ def main():
         cfg = OmegaConf.merge(cfg, OmegaConf.load(args.model_config))
     if args.model_name:
         cfg.model.name = args.model_name
+    if args.num_samples:
+        cfg.data.hard_samples = args.num_samples
+        cfg.data.easy_samples = args.num_samples
+    if args.output_dir:
+        cfg.output.results_dir = args.output_dir
+        cfg.output.plots_dir = os.path.join(args.output_dir, "plots")
 
     os.makedirs(cfg.output.results_dir, exist_ok=True)
     os.makedirs(cfg.output.plots_dir, exist_ok=True)

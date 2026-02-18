@@ -5,17 +5,26 @@ from __future__ import annotations
 import torch
 
 
+def _resolve_device(model_bundle, device: str) -> torch.device:
+    """Resolve the actual device when device_map='auto' is used."""
+    if device in ("auto", "auto:0"):
+        # Infer from the model's first parameter
+        return next(model_bundle.model.parameters()).device
+    return torch.device(device)
+
+
 def prepare_model_input(sample: dict, model_bundle, device: str):
     """Prepare a single sample for model inference.
 
     Returns:
         (model_inputs, answer_token_ids)
     """
+    resolved_device = _resolve_device(model_bundle, device)
     model_name = model_bundle.model_name.lower()
     if "llava" in model_name:
-        return _prepare_llava_input(sample, model_bundle.processor, device)
+        return _prepare_llava_input(sample, model_bundle.processor, resolved_device)
     if "qwen" in model_name:
-        return _prepare_qwen_input(sample, model_bundle.processor, device)
+        return _prepare_qwen_input(sample, model_bundle.processor, resolved_device)
     raise ValueError(f"Unsupported model family for input preparation: {model_bundle.model_name}")
 
 
