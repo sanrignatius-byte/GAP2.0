@@ -58,6 +58,41 @@ def compute_effective_rank(
     return float(np.exp(entropy))
 
 
+def compute_singular_spectrum_entropy(
+    H: torch.Tensor | np.ndarray,
+    normalize: bool = True,
+) -> float:
+    """Compute Shannon entropy of the singular value spectrum.
+
+    This is the non-exponentiated companion to effective rank:
+
+        H_spectrum = -sum_i p_i log p_i
+
+    where p_i are normalized singular values.
+
+    Returns:
+        Spectrum entropy in nats. Higher values indicate a flatter/longer-tailed
+        singular spectrum.
+    """
+    if isinstance(H, torch.Tensor):
+        H = H.float().cpu().numpy()
+
+    if H.ndim != 2:
+        raise ValueError(f"Expected 2D matrix, got shape {H.shape}")
+
+    if normalize:
+        H = H - H.mean(axis=0, keepdims=True)
+
+    sv = np.linalg.svd(H, compute_uv=False)
+    sv = sv[sv > 1e-10]
+
+    if len(sv) == 0:
+        return 0.0
+
+    p = sv / sv.sum()
+    return float(-np.sum(p * np.log(p)))
+
+
 def compute_effective_rank_per_layer(
     activations: dict[int, torch.Tensor],
     normalize: bool = True,
