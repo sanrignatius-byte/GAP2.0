@@ -10,5 +10,5 @@ model:
   dtype: "bfloat16"
 
 analysis:
-  expected_cliff_range: [12, 20]
+  probe_targets: ["visual_token", "text_instruction_token", "answer_token"]
   probe_layers: [0, 4, 8, 12, 16, 20, 24, 27]
