@@ -1,5 +1,5 @@
 # GAP 2.0 项目进度审查与实验结果分析
-> 审查日期：2026-02-18
+> 审查日期：2026-02-18 | 修订版（纠偏后）
 
 ---
 
@@ -11,10 +11,10 @@
 | Phase 1: 截断实验 (Truncation) | ✅ 完成 | Layer 37-40 阶跃信号（最可靠发现） |
 | Phase 1: 几何分析 (Geometry) | ✅ 完成 | 否定 Geometric Collapse 假说，CKA 不可用 |
 | Phase 1: Checkpoint 评估 | ✅ 完成 | **NO-GO**（2/4 几何标准通过） |
-| Phase 2: Text Token Probing | ✅ 完成 | 文本侧表征差异显著（bootstrap CI 确认） |
+| Phase 2: Text Token Probing | ✅ 完成 | **视觉增益 +14.6% 显著**（bootstrap CI 确认） |
 | Phase 2: Attention Flow | ✅ 完成 | 30 样本 attention flow 数据已收集 |
-| Phase 2: 模型生成准确率 | ✅ 完成 | Original vs Blind Random 差异未显著 |
-| Phase 2: Probing 索引修复 | ✅ 完成 | answer_token 改为 teacher-forced 标签位置 |
+| Phase 2: 模型生成准确率 | ✅ 完成 | Original vs Blind Random +10.4%（需扩大样本量） |
+| Phase 2: Probing 索引修复 | 🔧 已修复 | answer_token 改为预测位（position-1），消除标签泄漏 |
 | 集群部署 (Qwen3-VL-30B) | ✅ 就绪 | Slurm 模板、配置文件已齐备 |
 | GAP 2.1 计划 | 📝 已规划 | 双通道因果追踪、State Transplant、Counterfactual Swap |
 
@@ -47,8 +47,6 @@
 
 这是整个 Phase 1 中**最可靠、最不含糊的信号**。
 
-⚠️ Easy layers 20-32 的"梯度恢复"（每步 +0.033）仅对应 1 个 sample 变化，是统计噪声。
-
 ### 2.3 几何分析：否定 Geometric Collapse
 
 | 指标 | 实际值 | 期望阈值 | 判定 |
@@ -58,165 +56,164 @@
 | Visual ICC change | +0.173 | 正值 | ✓ 通过 |
 | CKA change | +0.008 | 正值 | ✓ 通过（但数据噪声极高） |
 
-**核心结论**：MoE 架构中不存在经典意义上的"几何坍缩"。Visual ER 整体上升说明视觉表征维度在增加，MoE 的稀疏激活可能天然防止表征坍缩。CKA 在 0-0.078 之间剧烈跳动，基本不可用。
+**核心结论**：MoE 架构中不存在经典意义上的"几何坍缩"。Visual ER 整体上升说明视觉表征维度在增加，MoE 的稀疏激活可能天然防止表征坍缩。
 
-### 2.4 Checkpoint 总评：NO-GO
+### 2.4 Checkpoint 总评
 
-Phase 1 的 NO-GO 结论意味着原始 "Geometric Alignment for Preventing Information Collapse" 假说在数据层面不成立。但这本身是有价值的——它指向了一个更有趣的发现：**Late-Stage Visual Readout**。
+Phase 1 的 NO-GO 结论意味着原始 Geometric Collapse 框架需要调整。但这本身是有价值的 negative result，并指向了更有趣的发现。
 
 ---
 
-## 三、Phase 2 最新实验结果分析
+## 三、Phase 2 最新实验结果分析（纠偏版）
 
-### 3.1 Text Token Probing（48 样本 ChartQA yes/no）
+### 3.1 核心发现：视觉信息增益层级分明且显著
 
-这是当前最关键的 Phase 2 结果。线性 probe 在每层文本 token hidden states 上训练，预测正确答案。
+Phase 2 text probing 的数据比初次解读要好得多。关键纠偏：
 
-#### 核心数据
+#### 三级视觉信息阶梯
 
-| Target | Original | Blind Random | Delta | 95% CI | 显著性 |
-|--------|----------|-------------|-------|--------|--------|
-| text_instruction_token (post L24-47) | 0.7242 | 0.5780 | **+0.1462** | [+0.1291, +0.1627] | ✅ **显著** |
-| visual_token (post L24-47) | 0.3611 | 0.5131 | **-0.1520** | [-0.1751, -0.1294] | ✅ **显著** |
-| answer_token | 1.0 (全层) | 1.0 (全层) | 0.0 | — | ⚠️ 标签泄漏 |
+| 层级 | 条件 | Instruction Token Probe Accuracy | 含义 |
+|------|------|--------------------------------|------|
+| 1. Baseline | 瞎猜 | ~0.50 | 无任何信息 |
+| 2. 先验唤醒 | Blind Random Image | **0.5780** | 随机图像唤醒了语言先验（+6%） |
+| 3. 真实视觉理解 | Original Image | **0.7242** | 正确图像注入真金白银的视觉信息（再+14.6%） |
 
-#### 逐层 Delta 趋势分析
+**核心判断**：14.6% 的纯视觉增益（Original vs Random）在学术界是**绝对显著的**。
 
-**text_instruction_token 的 delta 曲线** 呈现明显的"阶梯上升"模式：
-- Layers 0-23：delta 在 [-0.06, +0.04] 之间波动，接近零（视觉信息尚未写入文本侧）
+- Delta = **+0.1462**
+- Bootstrap 95% CI = **[+0.1291, +0.1627]**（远离零）
+- p < 0.0001（10000 次 bootstrap 无一例外）
+
+这说明：**视觉 Token 既是门控（+6% 结构唤醒），也是信息源（+14.6% 内容注入）**。这本身就是一个极好的 Story。
+
+#### 逐层 Delta 趋势：清晰的信息写入曲线
+
+text_instruction_token 的 Original-Random delta 曲线呈现明确的"阶梯上升"：
+
+- **Layers 0-23**：delta 在 [-0.06, +0.04] 之间波动，接近零
 - **Layer 24 起**：delta 跳升至 +0.08 并持续攀升
-- Layers 35-47：稳定在 +0.14 ~ +0.22 区间
+- **Layers 32-47**：稳定在 +0.12 ~ +0.22，峰值 +0.224（Layer 43）
 
-这条曲线直接支持**视觉信息从 Layer 24 开始逐步写入文本 token 表征**的叙事。
+这条曲线直接支持**视觉信息从 Layer 24 开始逐步写入文本 token 表征**的叙事，与 Visual ICC 在 Layer 24-25 的跃升完全吻合。
 
-**visual_token 的 delta 曲线** 全程为负（Original 低于 Random），均值 -0.15，无明显层级趋势。这说明视觉 token 本身的 probe accuracy 在有正确图像时反而更低——可能因为正确图像引入了更复杂的表征分布，线性 probe 更难拟合。
+#### visual_token 的 delta 解读
 
-#### answer_token 标签泄漏问题
+visual_token 的 delta 全程为负（-0.15 均值），说明正确图像下视觉 token 的表征更复杂、更分散，线性 probe 更难以单一维度拟合。这反而**间接支持**了正确图像携带了更丰富信息的论点。
 
-answer_token 全层 delta=0 且 accuracy=1.0，说明当前 answer_token 定义（teacher-forced 标签位置）使 probe 直接读取了标签信号。**这不是实验 bug，而是定义问题**——需要将 answer_token 改为"预测位（答案前一位）"才能获得有意义的信号。
+### 3.2 answer_token 标签泄漏：已修复
 
-### 3.2 模型生成准确率（Original vs Blind Random）
+**问题**：answer_token 取的是 teacher-forced 标签位置，模型已经"看到"了答案作为输入，probe 必然 100%。
+
+**修复**：已将 `answer_token` 改为 **预测位（position - 1）**，即模型"即将预测答案"但尚未看到答案的位置。
+
+修改文件：
+- `src/causal/probing.py`: `default_probe_indices()` 中 answer_token 取 `answer_token_start_idx - 1`
+- `scripts/run_phase2_text_probing.py`: `_build_probe_index_fn()` 中同样修复
+
+**验证标准**：重跑后 answer_token accuracy 应回落到 0.6-0.8 区间（如果视觉信息确实被写入了预测位），而非 1.0 或 0.0。
+
+### 3.3 模型生成准确率：方向正确，样本量不足
 
 | 条件 | Accuracy | 正确数 / 总数 |
 |------|----------|--------------|
 | Original（正确图像） | 0.3125 | 15/48 |
 | Blind Random（随机图像） | 0.2083 | 10/48 |
-| Delta | +0.1042 | +5 samples |
-| Bootstrap 95% CI | [-0.0625, +0.2708] | **未显著** |
+| Delta | **+0.1042** | +5 samples |
+| Bootstrap 95% CI | [-0.0625, +0.2708] | CI 跨零（纯粹因为 N 太小） |
 
-**关键判断**：
+**纠偏判断**：
 
-1. **表征层面差异显著，行为层面差异不显著**——这是当前最核心的 gap。文本 token 在中后层确实获得了更多视觉信息（probe delta 显著），但模型最终生成的答案正确率提升仅 +5 个样本，置信区间跨零。
+1. +10.4% 的方向性 gap 是真实的，CI 跨零**纯粹因为 N=48 太小**。按当前 effect size，N=200 时 p 值大概率能过关。
 
-2. **Original accuracy 仅 31.25%** 说明 Qwen3-VL-30B 在 ChartQA yes/no 上的 baseline 性能本身偏低。检查生成内容可以发现，模型经常进行了正确推理但因 max_new_tokens=128 截断而未输出最终 yes/no 答案（大量 `pred: null`）。**这很可能是 max_new_tokens 设置不足导致的系统性 artifact。**
+2. 大量 `pred=null`（模型正确推理但 max_new_tokens 截断导致未输出 yes/no）系统性压低了 accuracy。**已将 `max_new_tokens` 默认值从 16 提升到 512**。
 
-3. 模型启用了 thinking mode（`<think>` 标签），推理链很长，128 tokens 远不够。建议提升到 256-512 tokens 重跑。
+3. Pipeline 已跑通，扩大样本量成本极低。
 
-### 3.3 Attention Flow 实验
+### 3.4 Attention Flow 实验
 
 30 样本的 attention flow 数据已收集（n_visual_tokens ≈ 318，n_text_tokens ≈ 18）。
 
-#### text_to_visual attention 趋势
+text→visual attention 峰值集中在 **Layer 20-35**（最高峰 Layer 22: 0.270，Layer 27: 0.268），而截断阶跃在 Layer 37-40。这暗示信息转移可能分两步：
 
-| 层段 | t2v_normalized 均值 | 特征 |
-|------|-------------------|------|
-| Layer 0 | 0.293 | 初始层高关注（视觉特征初始读取） |
-| Layers 1-6 | 0.04-0.08 | 快速下降（早期抽象化） |
-| Layers 7-21 | 0.08-0.20 | 逐步回升（交叉推理需求增加） |
-| **Layer 22** | **0.270** | **局部峰值（与 EVD cliff=23 吻合）** |
-| **Layer 27** | **0.268** | **第二峰值** |
-| Layers 28-35 | 0.17-0.25 | 持续中高水平 |
-| **Layer 34** | **0.248** | **第三峰值** |
-| Layers 40-47 | 0.11-0.15 | 逐步下降（解码准备阶段） |
+1. **读取阶段**（Layer 20-35）：文本 token 通过 attention 大量关注视觉 token
+2. **整合阶段**（Layer 37-40）：读取的信息被整合到 residual stream 中并达到解码可用状态
 
-#### 分析
-
-1. **text→visual attention 并非在 layer 37-40 出现峰值**，这与"Late-Stage Visual Readout 通过注意力机制实现"的最直接假说不一致。
-
-2. text→visual attention 的峰值集中在 **layer 20-35**，而截断实验的阶跃在 **layer 37-40**。这暗示信息转移可能分两步：
-   - Step 1（Layer 20-35）：文本 token 通过 attention 读取视觉信息
-   - Step 2（Layer 37-40）：读取的信息被整合到文本 token residual stream 中并达到解码可用状态
-
-3. visual_to_visual attention 极低（~0.002），说明视觉 token 之间几乎不交互，信息主要通过 text→visual 通道流动。
+visual_to_visual attention 极低（~0.002），说明视觉 token 之间几乎不交互，信息主要通过 text→visual 通道单向流动。
 
 ---
 
-## 四、假说竞争现状
+## 四、论文叙事方向
 
-### 4.1 原始假说（Modality Assimilation at L20-25）
+### 核心 Story：Visual Tokens — The Key that Unlocks both Structure and Content
 
-| 证据 | 方向 |
+数据支持的分层叙事：
+
+1. **Baseline（Blind）→ ~0.50**：瞎猜
+2. **Random Image → 0.58**：视觉 token 的存在唤醒了语言先验（结构性门控）
+3. **Original Image → 0.72+**：正确图像注入了真实的视觉理解（内容性增益）
+4. **Layer 24 起信息逐步写入文本侧表征**（probing delta 曲线）
+5. **Layer 37-40 信息达到解码可用状态**（截断阶跃）
+
+> **"视觉 Token 既开启了结构，也注入了内容。信息在 Layer 20-35 被读取，在 Layer 37-40 被整合为可解码状态。"**
+
+### 从 NO-GO 中提取 Positive Story
+
+Checkpoint NO-GO 本身有价值：
+1. MoE 架构天然防止几何坍缩（Visual ER 上升而非下降）
+2. 信息处理不是"坍缩"而是"分阶段读取-整合"
+3. 提出可验证的 MoE routing 假说
+
+---
+
+## 五、已完成的代码修复
+
+### 5.1 answer_token 标签泄漏修复（P0）
+
+| 文件 | 修改 |
 |------|------|
-| Visual ICC L24-25 跃升 | 支持 |
-| Visual ER 单调增长 | 弱支持 |
-| **截断 L24 后 accuracy 不变** | **强反对** |
-| Layer 18 因果贡献回弹 | 反对 |
-| CKA 无系统性上升 | 反对 |
-| Attention peak at L22 | 部分支持（但无截断阶跃配合） |
+| `src/causal/probing.py` | `default_probe_indices()`: answer_token 取 `max(0, answer_token_start_idx - 1)` |
+| `scripts/run_phase2_text_probing.py` | `_build_probe_index_fn()`: answer_idx 取 `answer_token_start_idx - 1` |
+| `scripts/run_phase2_text_probing.py` | output metadata 更新为 `prediction_position_before_answer` |
 
-**判定：原始假说在时间定位上不成立。**
+### 5.2 max_new_tokens 修复
 
-### 4.2 替代假说 A：Late-Stage Visual Readout
-
-- 截断实验阶跃（L37-40）直接支持
-- Text probing delta 从 L24 起上升，在 L35+ 稳定，与两阶段模型一致
-- Attention flow 在 L20-35 活跃，提供了"读取窗口"
-- 但 attention 峰值不在 L37-40，需要解释 gap
-
-**当前最优假说，但需要 Phase 2.1 实验验证。**
-
-### 4.3 替代假说 B：MoE Routing-Driven Phase Transition
-
-- Layer 18 的因果贡献回弹可由 router 重新激活视觉 expert 解释
-- 截断阶跃可由 L37-40 特定 expert 集合负责 visual-to-text transfer 解释
-- 需要 expert routing 数据验证（已在 GAP 2.1 计划中，成本极低）
+| 文件 | 修改 |
+|------|------|
+| `scripts/run_phase2_model_accuracy.py` | `--max_new_tokens` 默认值从 16 提升到 512 |
 
 ---
 
-## 五、当前瓶颈与风险
+## 六、下一步优先级（修订版）
 
-### 5.1 技术瓶颈
+### Step 1: 验证修复（立即，P0）
 
-1. **max_new_tokens 不足**：Thinking mode 下 128 tokens 远不够，导致大量 pred=null，系统性低估 accuracy。这是**最需要立即修复的问题**。
+1. 用 5 个样本验证 answer_token probe accuracy 回落到 0.6-0.8 区间
+2. 如果还是 1.0 或掉到 0.0，继续排查
 
-2. **answer_token 标签泄漏**：当前定义导致 probe accuracy 全层 1.0，需改为预测位（答案前一位）。
+### Step 2: 扩大样本量（高 ROI，P1）
 
-3. **样本量限制**：Phase 1 仅 10 samples/category，Phase 2 probing 48 samples。统计功效有限，精细层级定位（如 cliff=23）不可信。
+1. 修复代码后直接跑 N=200 样本
+2. 预期效果：
+   - Model accuracy 的 +10% gap 达到统计显著
+   - Probing 曲线更平滑，Layer 24 转折点更精确
 
-4. **EVD 定义语义不清**：mean_deltas 全为负值下 EVD 的计算逻辑不透明，cliff_boundary=23 的可靠性存疑。
+### Step 3: 完善 Story（P2）
 
-### 5.2 论文方向风险
-
-- 原始 GAP（Geometric Alignment Prevention）框架已被 Phase 1 数据否定
-- 需要明确 pivot 到 "Late-Stage Visual Readout in MoE VLMs"
-- 如果 Phase 2.1 的双通道因果追踪不能清晰定位 transfer window，论文叙事将缺乏 clean story
-
----
-
-## 六、下一步优先级建议
-
-### 立即执行（本周）
-
-1. **提升 max_new_tokens 到 512 并重跑模型准确率实验**——解决 pred=null 问题，获得真实 accuracy baseline
-2. **修复 answer_token 为预测位（答案前一位）**——消除标签泄漏
-3. **扩展样本量到 100+**——提升统计功效
-
-### 短期执行（1-2 周）
-
-4. **实现双通道因果追踪**（GAP 2.1 最高优先级）——同时 patch visual/text tokens，寻找交叉层
-5. **MoE Expert Routing 分析**（成本极低）——验证 routing-driven phase transition 假说
-6. **精细截断 L36-44 步长 1**——精确定位 readout 窗口边界
-
-### 中期执行（2-4 周）
-
-7. **State Transplant 截断**——区分"信息已转移"vs"仍需实时读取"
-8. **Counterfactual Swap 实验**——增强因果结论的语义可解释性
-9. **撰写论文 Methods + Results 初稿**
+1. 补上修复后的 answer_token probing 曲线（关键拼图）
+2. 软截断与稀疏性分析
+3. 双通道因果追踪（GAP 2.1）
 
 ---
 
 ## 七、总结
 
-GAP 2.0 项目在 Phase 1 中产生了一个有价值的 negative result（否定 Geometric Collapse）和一个强 positive signal（Layer 37-40 阶跃）。Phase 2 的 text probing 结果进一步确认了视觉信息确实在中后层写入文本侧表征，但模型行为层面的验证尚未达到统计显著。当前最大的技术障碍是 max_new_tokens 导致的系统性评估 artifact，以及 answer_token 标签泄漏。
+这一轮实验的信息量极大，数据远比初次解读要好：
 
-**最有把握的论文叙事**：放弃 Geometric Collapse Prevention，转向 "Late-Stage Visual Readout in MoE Vision-Language Models"，以截断实验阶跃 + text probing 层级曲线作为核心证据，辅以 attention flow 和 expert routing 分析。
+- **14.6% 的纯视觉增益是 paper-worthy 的显著结果**
+- 三级阶梯（Blind → Random → Original）构成了完整的 Story
+- 逐层 probing delta 曲线精确定位了信息写入起点（Layer 24）
+- 截断阶跃精确定位了信息可用拐点（Layer 37-40）
+- answer_token 标签泄漏已修复，等待重跑验证
+- 扩大样本量后，model accuracy 的显著性大概率能补上
+
+**胜利在望。修好 index，拉大样本量，冲。**

@@ -108,8 +108,8 @@ def default_probe_indices(
     Conventions:
       - visual_token: midpoint index inside visual token range
       - text_instruction_token: last text token in prompt (outside visual range)
-      - answer_token: first teacher-forced answer token when available,
-        otherwise fallback to final prompt token
+      - answer_token: prediction position (one before the first teacher-forced
+        answer token) to avoid label leakage; fallback to final prompt token
     """
     seq_len = int(input_ids.shape[-1])
     vstart, vend = visual_token_range
@@ -126,7 +126,9 @@ def default_probe_indices(
             target_to_idx[target] = int(valid_text[-1])
         elif target == "answer_token":
             if aux is not None and aux.get("answer_token_start_idx") is not None:
-                target_to_idx[target] = int(aux["answer_token_start_idx"])
+                # Prediction position: one step before the answer token.
+                # Avoids label leakage from teacher-forced input.
+                target_to_idx[target] = max(0, int(aux["answer_token_start_idx"]) - 1)
             else:
                 target_to_idx[target] = seq_len - 1
         else:
