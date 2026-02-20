@@ -33,7 +33,7 @@ conda run -n gap2 python scripts/run_phase2_model_accuracy.py \
   --max_samples 1200 \
   --image_modes original blind_randomimage \
   --seed 42 \
-  --max_new_tokens 128 \
+  --max_new_tokens 512 \
   --output_dir "$OUT_DIR"
 
 echo ""
