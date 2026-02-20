@@ -316,3 +316,236 @@ class TruncationHook:
 
     def __exit__(self, *args):
         self.remove()
+
+
+class SoftTruncationHook:
+    """Replace visual tokens with controlled substitutes at layers > l.
+
+    Unlike TruncationHook (hard zero), this preserves activation statistics
+    to rule out distribution-shift artifacts.
+
+    Supported replacement strategies:
+        - "dataset_mean": Replace with pre-computed mean visual embedding
+        - "norm_matched_noise": Gaussian noise matched to per-token L2 norm
+        - "pca_matched_noise": Noise matching top-k singular directions
+        - "shuffle": Permute visual tokens within the sequence
+    """
+
+    def __init__(
+        self,
+        model: nn.Module,
+        truncation_layer: int,
+        visual_token_range: tuple[int, int],
+        strategy: str = "norm_matched_noise",
+        reference_states: Optional[torch.Tensor] = None,
+        pca_rank: int = 16,
+        seed: int = 42,
+        transformer_layers: Optional[list[nn.Module]] = None,
+    ):
+        self.model = model
+        self.truncation_layer = truncation_layer
+        self.visual_token_range = visual_token_range
+        self.strategy = strategy
+        self.reference_states = reference_states
+        self.pca_rank = pca_rank
+        self.seed = seed
+
+        if transformer_layers is not None:
+            self._layers = transformer_layers
+        else:
+            temp = ActivationExtractor(model)
+            self._layers = temp._transformer_layers
+
+        self._hooks = []
+
+    def _make_replacement_hook(self):
+        vstart, vend = self.visual_token_range
+        strategy = self.strategy
+        reference = self.reference_states
+        pca_rank = self.pca_rank
+        seed = self.seed
+        call_counter = [0]
+
+        def hook_fn(module, input, output):
+            if isinstance(output, tuple):
+                hidden = output[0].clone()
+                rest = output[1:]
+            else:
+                hidden = output.clone()
+                rest = None
+
+            visual = hidden[:, vstart:vend, :]  # (batch, N_v, d)
+
+            if strategy == "dataset_mean":
+                if reference is not None:
+                    replacement = reference.to(visual.device, visual.dtype)
+                    if replacement.dim() == 2:
+                        replacement = replacement.unsqueeze(0)
+                    hidden[:, vstart:vend, :] = replacement
+                else:
+                    hidden[:, vstart:vend, :] = visual.mean(dim=1, keepdim=True)
+
+            elif strategy == "norm_matched_noise":
+                gen = torch.Generator(device=visual.device)
+                gen.manual_seed(seed + call_counter[0])
+                call_counter[0] += 1
+                noise = torch.randn(visual.shape, generator=gen,
+                                    device=visual.device, dtype=visual.dtype)
+                token_norms = visual.norm(dim=-1, keepdim=True).clamp(min=1e-8)
+                noise_norms = noise.norm(dim=-1, keepdim=True).clamp(min=1e-8)
+                hidden[:, vstart:vend, :] = noise * (token_norms / noise_norms)
+
+            elif strategy == "pca_matched_noise":
+                gen = torch.Generator(device=visual.device)
+                gen.manual_seed(seed + call_counter[0])
+                call_counter[0] += 1
+                v_flat = visual[0]  # (N_v, d)
+                mean = v_flat.mean(dim=0, keepdim=True)
+                centered = v_flat - mean
+                U, S, Vt = torch.linalg.svd(centered, full_matrices=False)
+                k = min(pca_rank, S.shape[0])
+                noise_coeffs = torch.randn(v_flat.shape[0], k,
+                                           generator=gen, device=visual.device,
+                                           dtype=visual.dtype)
+                noise_coeffs = noise_coeffs * S[:k].unsqueeze(0)
+                replacement = noise_coeffs @ Vt[:k, :] + mean
+                hidden[:, vstart:vend, :] = replacement.unsqueeze(0)
+
+            elif strategy == "shuffle":
+                gen = torch.Generator(device=visual.device)
+                gen.manual_seed(seed + call_counter[0])
+                call_counter[0] += 1
+                n_vis = vend - vstart
+                perm = torch.randperm(n_vis, generator=gen, device=visual.device)
+                hidden[:, vstart:vend, :] = visual[:, perm, :]
+
+            else:
+                raise ValueError(f"Unknown soft truncation strategy: {strategy}")
+
+            if rest is not None:
+                return (hidden,) + rest
+            return hidden
+
+        return hook_fn
+
+    def register(self):
+        self.remove()
+        for idx in range(self.truncation_layer + 1, len(self._layers)):
+            hook = self._layers[idx].register_forward_hook(
+                self._make_replacement_hook()
+            )
+            self._hooks.append(hook)
+
+    def remove(self):
+        for h in self._hooks:
+            h.remove()
+        self._hooks.clear()
+
+    def __enter__(self):
+        self.register()
+        return self
+
+    def __exit__(self, *args):
+        self.remove()
+
+
+class DeepLayerVisualMaskHook:
+    """Mask visual tokens ONLY in a specified layer range.
+
+    Unlike TruncationHook (which masks layers > l), this masks layers in
+    [mask_start, mask_end). This tests whether deep layers functionally
+    need visual tokens for re-grounding.
+
+    Example: Keep visual tokens in layers 0-25, mask in layers 26-47.
+    If accuracy drops, deep layers still need visual information.
+    """
+
+    def __init__(
+        self,
+        model: nn.Module,
+        mask_start_layer: int,
+        mask_end_layer: int,
+        visual_token_range: tuple[int, int],
+        strategy: str = "zero",
+        reference_states: Optional[torch.Tensor] = None,
+        seed: int = 42,
+        transformer_layers: Optional[list[nn.Module]] = None,
+    ):
+        self.model = model
+        self.mask_start_layer = mask_start_layer
+        self.mask_end_layer = mask_end_layer
+        self.visual_token_range = visual_token_range
+        self.strategy = strategy
+        self.reference_states = reference_states
+        self.seed = seed
+
+        if transformer_layers is not None:
+            self._layers = transformer_layers
+        else:
+            temp = ActivationExtractor(model)
+            self._layers = temp._transformer_layers
+
+        self._hooks = []
+
+    def _make_mask_hook(self):
+        vstart, vend = self.visual_token_range
+        strategy = self.strategy
+        reference = self.reference_states
+        seed = self.seed
+        call_counter = [0]
+
+        def hook_fn(module, input, output):
+            if isinstance(output, tuple):
+                hidden = output[0].clone()
+                rest = output[1:]
+            else:
+                hidden = output.clone()
+                rest = None
+
+            visual = hidden[:, vstart:vend, :]
+
+            if strategy == "zero":
+                hidden[:, vstart:vend, :] = 0.0
+            elif strategy == "norm_matched_noise":
+                gen = torch.Generator(device=visual.device)
+                gen.manual_seed(seed + call_counter[0])
+                call_counter[0] += 1
+                noise = torch.randn(visual.shape, generator=gen,
+                                    device=visual.device, dtype=visual.dtype)
+                token_norms = visual.norm(dim=-1, keepdim=True).clamp(min=1e-8)
+                noise_norms = noise.norm(dim=-1, keepdim=True).clamp(min=1e-8)
+                hidden[:, vstart:vend, :] = noise * (token_norms / noise_norms)
+            elif strategy == "dataset_mean":
+                if reference is not None:
+                    replacement = reference.to(visual.device, visual.dtype)
+                    if replacement.dim() == 2:
+                        replacement = replacement.unsqueeze(0)
+                    hidden[:, vstart:vend, :] = replacement
+                else:
+                    hidden[:, vstart:vend, :] = visual.mean(dim=1, keepdim=True)
+            else:
+                raise ValueError(f"Unknown masking strategy: {strategy}")
+
+            if rest is not None:
+                return (hidden,) + rest
+            return hidden
+
+        return hook_fn
+
+    def register(self):
+        self.remove()
+        for idx in range(self.mask_start_layer, min(self.mask_end_layer, len(self._layers))):
+            hook = self._layers[idx].register_forward_hook(self._make_mask_hook())
+            self._hooks.append(hook)
+
+    def remove(self):
+        for h in self._hooks:
+            h.remove()
+        self._hooks.clear()
+
+    def __enter__(self):
+        self.register()
+        return self
+
+    def __exit__(self, *args):
+        self.remove()
